@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { View, Text, TouchableOpacity } from "react-native";
-
+import "./../global.css";
 import { ThemedText } from "@/components/ThemedText";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 
@@ -36,7 +36,7 @@ export default function HomeScreen() {
           className="py-4 px-8 rounded-full items-center justify-center mt-5 bg-sky-600"
           onPress={handleScanPress}
         >
-          <Text className="text-white text-lg font-bold">Scan Receipt</Text>
+          <Text className="mt-3 text-red text-lg font-bold">Scan Receipt</Text>
         </TouchableOpacity>
 
         {/* We'll add recent links section here later */}
