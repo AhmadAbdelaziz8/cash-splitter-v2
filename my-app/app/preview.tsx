@@ -1,15 +1,7 @@
-import { StyleSheet, TouchableOpacity } from "react-native";
-import { Image } from "expo-image";
 import { router } from "expo-router";
-
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { View, Text, TouchableOpacity } from "react-native";
 
 export default function PreviewScreen() {
-  const colorScheme = useColorScheme();
-
   const handleRetake = () => {
     router.push("/camera");
   };
@@ -21,102 +13,35 @@ export default function PreviewScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView style={styles.previewContainer}>
-        <ThemedView style={styles.imagePreview}>
-          <ThemedText style={styles.placeholderText}>Receipt Image</ThemedText>
-          <ThemedText style={styles.placeholderSubtext}>
+    <View className="flex-1">
+      <View className="flex-1 p-5">
+        <View className="flex-1 bg-gray-200 rounded-lg justify-center items-center overflow-hidden">
+          <Text className="text-2xl mb-2">Receipt Image</Text>
+          <Text className="text-sm text-center px-5">
             (This is a placeholder - actual image will appear here)
-          </ThemedText>
-        </ThemedView>
-      </ThemedView>
+          </Text>
+        </View>
+      </View>
 
-      <ThemedView style={styles.controlsContainer}>
+      <View className="flex-row justify-between p-5 gap-3">
         <TouchableOpacity
-          style={[
-            styles.button,
-            styles.secondaryButton,
-            { borderColor: Colors[colorScheme ?? "light"].tint },
-          ]}
+          className="flex-1 py-4 rounded-lg items-center justify-center border-2 border-sky-600"
           onPress={handleRetake}
         >
-          <ThemedText
-            style={[
-              styles.buttonText,
-              { color: Colors[colorScheme ?? "light"].tint },
-            ]}
-          >
+          <Text className="font-bold text-base text-sky-600">
             Retake
-          </ThemedText>
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.button,
-            styles.primaryButton,
-            { backgroundColor: Colors[colorScheme ?? "light"].tint },
-          ]}
+          className="flex-1 py-4 rounded-lg items-center justify-center bg-sky-600"
           onPress={handleProceed}
         >
-          <ThemedText style={[styles.buttonText, styles.primaryButtonText]}>
+          <Text className="font-bold text-base text-white">
             Process Receipt
-          </ThemedText>
+          </Text>
         </TouchableOpacity>
-      </ThemedView>
-    </ThemedView>
+      </View>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  previewContainer: {
-    flex: 1,
-    padding: 20,
-  },
-  imagePreview: {
-    flex: 1,
-    backgroundColor: "#e1e1e1",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden",
-  },
-  placeholderText: {
-    fontSize: 24,
-    marginBottom: 8,
-  },
-  placeholderSubtext: {
-    fontSize: 14,
-    textAlign: "center",
-    paddingHorizontal: 20,
-  },
-  controlsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 20,
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryButton: {
-    backgroundColor: "#0a7ea4",
-  },
-  secondaryButton: {
-    backgroundColor: "transparent",
-    borderWidth: 2,
-  },
-  buttonText: {
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  primaryButtonText: {
-    color: "white",
-  },
-});

@@ -1,10 +1,12 @@
-import { StyleSheet, TouchableOpacity, FlatList, Share } from "react-native";
+import {
+  FlatList,
+  Share,
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 import { router } from "expo-router";
-
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
 
 // Define the type for receipt items
 interface ReceiptItem {
@@ -22,9 +24,17 @@ const MOCK_ITEMS: ReceiptItem[] = [
   { id: "5", name: "Coffee", price: 3.99 },
 ];
 
-export default function ResultsScreen() {
-  const colorScheme = useColorScheme();
+// Define styles for non-compatible components
+const styles = StyleSheet.create({
+  list: {
+    flex: 1,
+  },
+  listContent: {
+    paddingVertical: 8,
+  },
+});
 
+export default function ResultsScreen() {
   const handleBack = () => {
     router.push("/");
   };
@@ -60,23 +70,23 @@ export default function ResultsScreen() {
   };
 
   const renderItem = ({ item }: { item: ReceiptItem }) => (
-    <ThemedView style={styles.itemContainer}>
-      <ThemedText style={styles.itemName}>{item.name}</ThemedText>
-      <ThemedText style={styles.itemPrice}>${item.price.toFixed(2)}</ThemedText>
-    </ThemedView>
+    <View className="flex-row justify-between py-3 px-1 border-b border-gray-200">
+      <Text className="text-base">{item.name}</Text>
+      <Text className="text-base font-bold">${item.price.toFixed(2)}</Text>
+    </View>
   );
 
   // Calculate total
   const total = MOCK_ITEMS.reduce((sum, item) => sum + item.price, 0);
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView style={styles.headerContainer}>
-        <ThemedText style={styles.headerTitle}>Receipt Items</ThemedText>
-        <ThemedText style={styles.headerSubtitle}>
+    <View className="flex-1 p-5">
+      <View className="mb-5">
+        <Text className="text-2xl font-bold mb-1">Receipt Items</Text>
+        <Text className="text-base opacity-70">
           We found the following items on your receipt
-        </ThemedText>
-      </ThemedView>
+        </Text>
+      </View>
 
       <FlatList
         data={MOCK_ITEMS}
@@ -86,125 +96,26 @@ export default function ResultsScreen() {
         contentContainerStyle={styles.listContent}
       />
 
-      <ThemedView style={styles.totalContainer}>
-        <ThemedText style={styles.totalLabel}>Total</ThemedText>
-        <ThemedText style={styles.totalAmount}>${total.toFixed(2)}</ThemedText>
-      </ThemedView>
+      <View className="flex-row justify-between py-4 border-t-2 border-gray-200">
+        <Text className="text-lg font-bold">Total</Text>
+        <Text className="text-lg font-bold">${total.toFixed(2)}</Text>
+      </View>
 
-      <ThemedView style={styles.buttonContainer}>
+      <View className="flex-row justify-between mt-5 gap-3">
         <TouchableOpacity
-          style={[
-            styles.button,
-            styles.secondaryButton,
-            { borderColor: Colors[colorScheme ?? "light"].tint },
-          ]}
+          className="flex-1 py-4 rounded-lg items-center justify-center border-2 border-sky-600"
           onPress={handleBack}
         >
-          <ThemedText
-            style={[
-              styles.buttonText,
-              { color: Colors[colorScheme ?? "light"].tint },
-            ]}
-          >
-            Back Home
-          </ThemedText>
+          <Text className="font-bold text-base text-sky-600">Back Home</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.button,
-            styles.primaryButton,
-            { backgroundColor: Colors[colorScheme ?? "light"].tint },
-          ]}
+          className="flex-1 py-4 rounded-lg items-center justify-center bg-sky-600"
           onPress={handleShare}
         >
-          <ThemedText style={[styles.buttonText, styles.primaryButtonText]}>
-            Share Link
-          </ThemedText>
+          <Text className="font-bold text-base text-white">Share Link</Text>
         </TouchableOpacity>
-      </ThemedView>
-    </ThemedView>
+      </View>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-  },
-  headerContainer: {
-    marginBottom: 20,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    opacity: 0.7,
-  },
-  list: {
-    flex: 1,
-  },
-  listContent: {
-    paddingVertical: 8,
-  },
-  itemContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
-  },
-  itemName: {
-    fontSize: 16,
-  },
-  itemPrice: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  totalContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    borderTopWidth: 2,
-    borderTopColor: "#e0e0e0",
-  },
-  totalLabel: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  totalAmount: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 20,
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryButton: {
-    backgroundColor: "#0a7ea4",
-  },
-  secondaryButton: {
-    backgroundColor: "transparent",
-    borderWidth: 2,
-  },
-  buttonText: {
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  primaryButtonText: {
-    color: "white",
-  },
-});

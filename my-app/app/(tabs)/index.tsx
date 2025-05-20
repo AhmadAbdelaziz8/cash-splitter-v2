@@ -1,16 +1,11 @@
-import { StyleSheet, TouchableOpacity } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
+import { View, Text, TouchableOpacity } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function HomeScreen() {
-  const colorScheme = useColorScheme();
-
   const handleScanPress = () => {
     router.push("/camera");
   };
@@ -21,68 +16,31 @@ export default function HomeScreen() {
       headerImage={
         <Image
           source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.headerImage}
+          className="h-[200px] w-[290px] absolute bottom-0 left-0"
         />
       }
     >
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
+      <View className="p-4 space-y-6">
+        <View className="mt-4 items-center">
           <ThemedText type="title">Cash Splitter</ThemedText>
-        </ThemedView>
+        </View>
 
-        <ThemedView style={styles.descriptionContainer}>
+        <View className="items-center">
           <ThemedText>
             Take a photo of your receipt and let AI split the costs among your
             friends.
           </ThemedText>
-        </ThemedView>
+        </View>
 
         <TouchableOpacity
-          style={[
-            styles.scanButton,
-            { backgroundColor: Colors[colorScheme ?? "light"].tint },
-          ]}
+          className="py-4 px-8 rounded-full items-center justify-center mt-5 bg-sky-600"
           onPress={handleScanPress}
         >
-          <ThemedText style={styles.buttonText}>Scan Receipt</ThemedText>
+          <Text className="text-white text-lg font-bold">Scan Receipt</Text>
         </TouchableOpacity>
 
         {/* We'll add recent links section here later */}
-      </ThemedView>
+      </View>
     </ParallaxScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    gap: 24,
-  },
-  titleContainer: {
-    marginTop: 16,
-    alignItems: "center",
-  },
-  descriptionContainer: {
-    alignItems: "center",
-  },
-  scanButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 20,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  headerImage: {
-    height: 200,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
-  },
-});

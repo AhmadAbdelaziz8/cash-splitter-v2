@@ -1,9 +1,7 @@
 import { useEffect } from "react";
-import { StyleSheet, ActivityIndicator } from "react-native";
+import { ActivityIndicator, View, Text } from "react-native";
 import { router } from "expo-router";
 
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
@@ -21,46 +19,20 @@ export default function ProcessingScreen() {
   }, []);
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedView style={styles.loadingContainer}>
+    <View className="flex-1 justify-center items-center p-5">
+      <View className="items-center">
         <ActivityIndicator
           size="large"
           color={Colors[colorScheme ?? "light"].tint}
-          style={styles.spinner}
+          className="mb-5"
         />
-        <ThemedText style={styles.loadingText}>
+        <Text className="text-2xl font-bold mb-2 text-center">
           Processing Your Receipt
-        </ThemedText>
-        <ThemedText style={styles.subText}>
+        </Text>
+        <Text className="text-base text-center opacity-70">
           Our AI is analyzing the receipt and extracting items...
-        </ThemedText>
-      </ThemedView>
-    </ThemedView>
+        </Text>
+      </View>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  loadingContainer: {
-    alignItems: "center",
-  },
-  spinner: {
-    marginBottom: 20,
-  },
-  loadingText: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  subText: {
-    fontSize: 16,
-    textAlign: "center",
-    opacity: 0.7,
-  },
-});
