@@ -1,3 +1,5 @@
+import "../global.css";
+
 import {
   DarkTheme,
   DefaultTheme,
@@ -8,7 +10,6 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import { ReceiptProvider } from "@/contexts/ReceiptContext";
-import "../global.css";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 

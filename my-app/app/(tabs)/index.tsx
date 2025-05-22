@@ -1,7 +1,6 @@
 // import { Image } from "expo-image";
 import { router } from "expo-router";
 import { View, Text, TouchableOpacity } from "react-native";
-import "./../global.css";
 import { ThemedText } from "@/components/ThemedText";
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 
