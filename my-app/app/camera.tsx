@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useState, useRef, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Button } from "react-native";
+
 import {
   SafeAreaView,
   useSafeAreaInsets,
@@ -8,14 +9,26 @@ import {
 import { CameraView, useCameraPermissions, CameraType } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
+import { useReceipt } from "@/contexts/ReceiptContext";
 
 export default function CameraScreen() {
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<any>(null);
+  const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
+  const { resetState } = useReceipt();
+
+  // Reset receipt state when opening camera
+  useEffect(() => {
+    resetState();
+  }, []);
 
   const handleBack = () => {
     router.back();
+  };
+
+  const toggleCameraFacing = () => {
+    setFacing((current) => (current === "back" ? "front" : "back"));
   };
 
   const handleCapturePhoto = async () => {
@@ -27,111 +40,102 @@ export default function CameraScreen() {
           params: { imageUri: photo.uri },
         });
       } catch (error) {
-        console.error("Error taking picture:", error);
-        alert("Failed to take picture");
+        console.error("Failed to take picture:", error);
       }
     }
   };
 
-  const handlePickImage = async () => {
-    // Request permission for image picker
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (status !== "granted") {
-      alert("Sorry, we need camera roll permissions to make this work!");
-      return;
-    }
-
-    // Pick an image
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      router.push({
-        pathname: "/preview",
-        params: { imageUri: result.assets[0].uri },
+  const handleSelectFromGallery = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
       });
+
+      if (!result.canceled) {
+        router.push({
+          pathname: "/preview",
+          params: { imageUri: result.assets[0].uri },
+        });
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
     }
   };
 
   if (!permission) {
+    // Camera permissions are still loading.
     return (
-      <SafeAreaView className="flex-1 justify-center items-center">
-        <Text className="text-lg">Requesting camera permission...</Text>
-      </SafeAreaView>
+      <View className="flex-1 justify-center items-center">
+        <Text>Loading camera permissions...</Text>
+      </View>
     );
   }
 
   if (!permission.granted) {
+    // Camera permissions are not granted yet.
     return (
-      <SafeAreaView className="flex-1 justify-center items-center">
-        <Text className="text-lg text-center px-4">
-          No access to camera. Please enable camera permissions in your device
-          settings.
+      <View className="flex-1 justify-center items-center p-4">
+        <Text className="text-lg mb-4 text-center">
+          We need your permission to use the camera
         </Text>
-        {permission.canAskAgain && (
-          <TouchableOpacity
-            className="mt-4 py-3 px-6 bg-sky-600 rounded-full"
-            onPress={requestPermission}
-          >
-            <Text className="text-white font-bold">Grant Permission</Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          className="mt-4 py-3 px-6 bg-sky-600 rounded-full"
-          onPress={handleBack}
-        >
-          <Text className="text-white font-bold">Go Back</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
+        <Button onPress={requestPermission} title="Grant Permission" />
+      </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-black">
-      <CameraView ref={cameraRef} style={styles.absoluteFill} facing="back" />
-
-      <View
-        className="absolute top-0 left-0 right-0 flex-row justify-between items-center p-4"
-        style={{ paddingTop: insets.top || 16 }}
+    <View className="flex-1 bg-black">
+      <CameraView
+        ref={cameraRef}
+        className="flex-1"
+        facing={facing}
+        style={{ flex: 1 }}
       >
-        {/* Back button */}
-        <TouchableOpacity
-          className="py-2 px-4 rounded-full bg-black/50"
-          onPress={handleBack}
-        >
-          <Text className="text-white font-bold">Back</Text>
-        </TouchableOpacity>
-      </View>
+        {/* Top Control Bar */}
+        <SafeAreaView className="absolute top-0 left-0 right-0">
+          <View className="flex-row items-center justify-between p-4">
+            <TouchableOpacity onPress={handleBack}>
+              <Ionicons name="arrow-back" size={28} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={toggleCameraFacing}>
+              <Ionicons name="camera-reverse" size={28} color="white" />
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
 
-      <View
-        className="flex-row justify-evenly items-center bg-black/50 absolute bottom-0 left-0 right-0"
-        style={{ paddingBottom: Math.max(insets.bottom + 8, 16) }}
-      >
-        {/* Gallery button */}
-        <TouchableOpacity
-          className="p-3 rounded-full"
-          onPress={handlePickImage}
+        {/* Bottom Control Bar */}
+        <View
+          className="absolute bottom-0 left-0 right-0 py-10 px-4"
+          style={{
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 20,
+          }}
         >
-          <Ionicons name="images" size={28} color="white" />
-        </TouchableOpacity>
+          <View className="flex-row items-center justify-between">
+            {/* Gallery Button */}
+            <TouchableOpacity
+              className="bg-black/30 p-3 rounded-full"
+              onPress={handleSelectFromGallery}
+            >
+              <Ionicons name="images" size={28} color="white" />
+            </TouchableOpacity>
 
-        {/* Capture button */}
-        <TouchableOpacity
-          className="w-[70px] h-[70px] my-4 rounded-full border-4 border-white bg-white/20 justify-center items-center"
-          onPress={handleCapturePhoto}
-        >
-          <View className="w-[54px] h-[54px] rounded-full bg-white" />
-        </TouchableOpacity>
+            {/* Capture Button */}
+            <TouchableOpacity
+              className="bg-white p-1 rounded-full"
+              onPress={handleCapturePhoto}
+            >
+              <View className="h-16 w-16 rounded-full border-2 border-white" />
+            </TouchableOpacity>
 
-        {/* Placeholder for symmetry */}
-        <View className="w-[34px]" />
-      </View>
-    </SafeAreaView>
+            {/* Flash Button - Placeholder/Disabled for now */}
+            <TouchableOpacity className="bg-black/30 p-3 rounded-full">
+              <Ionicons name="flash-off" size={28} color="white" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </CameraView>
+    </View>
   );
 }
 

@@ -1,89 +1,75 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useState, useContext, ReactNode } from "react";
 
 // Define interface for receipt items
 export interface ReceiptItem {
   id: string;
   name: string;
   price: number;
+  selected: boolean;
+  assignedTo: string[];
 }
 
 // Define the context state interface
 interface ReceiptContextType {
   imageUri: string | null;
-  parsedItems: ReceiptItem[] | null;
-  isLoading: boolean;
-  error: string | null;
-  shareableLink: string | null;
+  imageBase64: string | null;
+  items: ReceiptItem[];
   setImageUri: (uri: string | null) => void;
-  setParsedItems: (items: ReceiptItem[] | null) => void;
-  setLoading: (isLoading: boolean) => void;
-  setError: (error: string | null) => void;
-  generateShareableLink: () => void;
-  clearState: () => void;
+  setImageBase64: (base64: string | null) => void;
+  setItems: (items: ReceiptItem[]) => void;
+  resetState: () => void;
 }
 
 // Create context with default values
-const ReceiptContext = createContext<ReceiptContextType | undefined>(undefined);
+const initialReceiptItems: ReceiptItem[] = [
+  { id: "1", name: "Burger", price: 10.99, selected: false, assignedTo: [] },
+  { id: "2", name: "Fries", price: 3.5, selected: false, assignedTo: [] },
+  { id: "3", name: "Soda", price: 2.5, selected: false, assignedTo: [] },
+  { id: "4", name: "Ice Cream", price: 4.99, selected: false, assignedTo: [] },
+  { id: "5", name: "Coffee", price: 3.99, selected: false, assignedTo: [] },
+];
+
+const ReceiptContext = createContext<ReceiptContextType>({
+  imageUri: null,
+  imageBase64: null,
+  items: initialReceiptItems,
+  setImageUri: () => {},
+  setImageBase64: () => {},
+  setItems: () => {},
+  resetState: () => {},
+});
 
 // Provider component
-export function ReceiptProvider({ children }: { children: ReactNode }) {
+export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [imageUri, setImageUri] = useState<string | null>(null);
-  const [parsedItems, setParsedItems] = useState<ReceiptItem[] | null>(null);
-  const [isLoading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [shareableLink, setShareableLink] = useState<string | null>(null);
-
-  // Generate a shareable link from parsed items
-  const generateShareableLink = () => {
-    if (!parsedItems) {
-      setError("No receipt items to share");
-      return;
-    }
-
-    try {
-      const encodedData = encodeURIComponent(JSON.stringify(parsedItems));
-      const link = `https://your-static-site.com/splitter.html#data=${encodedData}`;
-      setShareableLink(link);
-    } catch (error) {
-      setError("Failed to generate shareable link");
-    }
-  };
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [items, setItems] = useState<ReceiptItem[]>(initialReceiptItems);
 
   // Clear all state
-  const clearState = () => {
+  const resetState = () => {
     setImageUri(null);
-    setParsedItems(null);
-    setLoading(false);
-    setError(null);
-    setShareableLink(null);
+    setImageBase64(null);
+    setItems(initialReceiptItems);
   };
 
   return (
     <ReceiptContext.Provider
       value={{
         imageUri,
-        parsedItems,
-        isLoading,
-        error,
-        shareableLink,
+        imageBase64,
+        items,
         setImageUri,
-        setParsedItems,
-        setLoading,
-        setError,
-        generateShareableLink,
-        clearState,
+        setImageBase64,
+        setItems,
+        resetState,
       }}
     >
       {children}
     </ReceiptContext.Provider>
   );
-}
+};
 
 // Custom hook to use the context
-export function useReceipt() {
-  const context = useContext(ReceiptContext);
-  if (context === undefined) {
-    throw new Error("useReceipt must be used within a ReceiptProvider");
-  }
-  return context;
-}
+export const useReceipt = () => useContext(ReceiptContext);

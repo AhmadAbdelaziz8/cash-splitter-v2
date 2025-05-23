@@ -1,9 +1,21 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { View, Text, TouchableOpacity, Alert } from "react-native"; // Added Alert
-import { parseImage } from "../utils/imageUtils"; // Assuming imageUtils.js is in my-app/utils/
+import { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  Image,
+  ActivityIndicator,
+  Platform,
+} from "react-native";
+import { parseImage } from "../utils/imageUtils";
+import { useReceipt } from "@/contexts/ReceiptContext";
 
 export default function PreviewScreen() {
   const { imageUri } = useLocalSearchParams<{ imageUri?: string }>();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { setImageUri: setContextImageUri, setImageBase64 } = useReceipt();
 
   const handleRetake = () => {
     if (router.canGoBack()) {
@@ -21,21 +33,28 @@ export default function PreviewScreen() {
     }
 
     try {
+      setIsProcessing(true);
       console.log(`Processing image URI: ${imageUri}`);
-      // TODO: Show a proper loading indicator using state or context
 
-      const base64Image = await parseImage(imageUri);
+      // Save image URI to context
+      setContextImageUri(imageUri);
 
-      console.log(
-        "Base64 Image (snippet):\n",
-        base64Image.substring(0, 100) + "..."
-      );
-      Alert.alert(
-        "Success",
-        "Image converted to Base64! Check console for a snippet. Next: Send to LLM."
-      );
+      // Convert image to base64 or use directly on web
+      const processedImage = await parseImage(imageUri);
 
-      // For now, just navigating. Later, we'll pass data or use context.
+      // Save processed image data to context
+      setImageBase64(processedImage);
+
+      if (Platform.OS === "web") {
+        console.log("Using web image format");
+      } else {
+        console.log(
+          "Base64 Image (snippet):\n",
+          processedImage.substring(0, 100) + "..."
+        );
+      }
+
+      // Navigate to processing screen
       router.push("/processing");
     } catch (error) {
       console.error("Error processing image:", error);
@@ -45,7 +64,7 @@ export default function PreviewScreen() {
           error instanceof Error ? error.message : "Unknown error"
         }`
       );
-      // TODO: Hide loading indicator here
+      setIsProcessing(false);
     }
   };
 
@@ -53,20 +72,22 @@ export default function PreviewScreen() {
     <View className="flex-1">
       <View className="flex-1 p-5 justify-center items-center">
         {imageUri ? (
-          <View>
+          <View className="w-full items-center">
             <Text className="text-lg mb-2 text-center">
               Image Ready for Processing:
             </Text>
-            {/* 
-              TODO: Display the actual image preview here. 
-              You'll need to import the Image component from 'expo-image' or 'react-native'
-              Example: <Image source={{ uri: imageUri }} style={{ width: 200, height: 200, resizeMode: 'contain' }} /> 
-            */}
-            <View className="w-full h-64 bg-gray-200 my-4 rounded-lg justify-center items-center border border-gray-300">
-              <Text className="text-gray-500">(Image Preview Placeholder)</Text>
+            {/* Display the actual image preview */}
+            <View className="w-full shadow-md rounded-lg overflow-hidden bg-white">
+              <Image
+                source={{ uri: imageUri }}
+                className="w-full h-80"
+                resizeMode="contain"
+                accessible={true}
+                accessibilityLabel="Preview of captured receipt"
+              />
             </View>
             <Text
-              className="text-xs text-gray-500 p-1 bg-gray-100 rounded break-all self-stretch text-center"
+              className="text-xs text-gray-500 p-1 bg-gray-100 rounded break-all self-stretch text-center mt-2"
               numberOfLines={1}
               ellipsizeMode="middle"
             >
@@ -87,6 +108,7 @@ export default function PreviewScreen() {
         <TouchableOpacity
           className="flex-1 py-3 px-4 rounded-lg items-center justify-center border-2 border-sky-600 active:bg-sky-50"
           onPress={handleRetake}
+          disabled={isProcessing}
         >
           <Text className="font-bold text-base text-sky-600">Retake</Text>
         </TouchableOpacity>
@@ -94,11 +116,15 @@ export default function PreviewScreen() {
         <TouchableOpacity
           className="flex-1 py-3 px-4 rounded-lg items-center justify-center bg-sky-600 active:bg-sky-700"
           onPress={handleProceed}
-          disabled={!imageUri} // Disable button if no imageUri
+          disabled={!imageUri || isProcessing}
         >
-          <Text className="font-bold text-base text-white">
-            Process Receipt
-          </Text>
+          {isProcessing ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text className="font-bold text-base text-white">
+              Process Receipt
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </View>
