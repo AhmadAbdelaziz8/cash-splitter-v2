@@ -19,42 +19,25 @@ export default function PreviewScreen() {
 
   const handleRetake = () => {
     if (router.canGoBack()) {
-      router.back(); // Go back to the previous screen (likely CameraScreen)
+      router.back();
     } else {
-      router.replace("/camera"); // Fallback if no history
+      router.replace("/camera");
     }
   };
 
   const handleProceed = async () => {
     if (!imageUri) {
       Alert.alert("Error", "No image URI found. Please retake the photo.");
-      console.error("handleProceed: imageUri is missing from search params.");
       return;
     }
 
     try {
       setIsProcessing(true);
-      console.log(`Processing image URI: ${imageUri}`);
-
-      // Save image URI to context
       setContextImageUri(imageUri);
 
-      // Convert image to base64 or use directly on web
       const processedImage = await parseImage(imageUri);
-
-      // Save processed image data to context
       setImageBase64(processedImage);
 
-      if (Platform.OS === "web") {
-        console.log("Using web image format");
-      } else {
-        console.log(
-          "Base64 Image (snippet):\n",
-          processedImage.substring(0, 100) + "..."
-        );
-      }
-
-      // Navigate to processing screen
       router.push("/processing");
     } catch (error) {
       console.error("Error processing image:", error);
@@ -69,14 +52,13 @@ export default function PreviewScreen() {
   };
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-gray-50">
       <View className="flex-1 p-5 justify-center items-center">
         {imageUri ? (
           <View className="w-full items-center">
-            <Text className="text-lg mb-2 text-center">
+            <Text className="text-lg mb-2 text-center text-gray-800">
               Image Ready for Processing:
             </Text>
-            {/* Display the actual image preview */}
             <View className="w-full shadow-md rounded-lg overflow-hidden bg-white">
               <Image
                 source={{ uri: imageUri }}
@@ -106,22 +88,22 @@ export default function PreviewScreen() {
 
       <View className="flex-row justify-between p-5 gap-3 border-t border-gray-200">
         <TouchableOpacity
-          className="flex-1 py-3 px-4 rounded-lg items-center justify-center border-2 border-sky-600 active:bg-sky-50"
+          className="flex-1 py-3 px-4 rounded-lg items-center justify-center border-2 border-sky-400 active:bg-sky-50"
           onPress={handleRetake}
           disabled={isProcessing}
         >
-          <Text className="font-bold text-base text-sky-600">Retake</Text>
+          <Text className="font-bold text-base text-sky-500">Retake</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="flex-1 py-3 px-4 rounded-lg items-center justify-center bg-sky-600 active:bg-sky-700"
+          className="flex-1 py-3 px-4 rounded-lg items-center justify-center bg-sky-400 active:bg-sky-500"
           onPress={handleProceed}
           disabled={!imageUri || isProcessing}
         >
           {isProcessing ? (
-            <ActivityIndicator color="#ffffff" />
+            <ActivityIndicator color="#374151" />
           ) : (
-            <Text className="font-bold text-base text-white">
+            <Text className="font-bold text-base text-gray-800">
               Process Receipt
             </Text>
           )}

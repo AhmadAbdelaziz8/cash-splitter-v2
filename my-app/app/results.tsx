@@ -36,22 +36,10 @@ export default function ResultsScreen() {
   const [activePersonIndex, setActivePersonIndex] = useState<number>(0);
   const [showSplitSummary, setShowSplitSummary] = useState<boolean>(false);
 
-  // Check if we have image data from processing
-  useEffect(() => {
-    if (!imageBase64) {
-      console.log("No image data available, using mock data");
-      // No need to navigate away since we're using mock data for now
-    }
-  }, [imageBase64]);
-
   // Keep context in sync when items change
   useEffect(() => {
     setContextItems(items);
   }, [items]);
-
-  const handleBack = () => {
-    router.push("/");
-  };
 
   const handleShare = async () => {
     try {
@@ -70,14 +58,6 @@ export default function ResultsScreen() {
       const result = await Share.share({
         message: shareMessage,
       });
-
-      if (result.action === Share.sharedAction) {
-        if (result.activityType) {
-          console.log("Shared with activity type:", result.activityType);
-        } else {
-          console.log("Shared");
-        }
-      }
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error occurred";
@@ -128,7 +108,6 @@ export default function ResultsScreen() {
       );
 
       const itemsTotal = assignedItems.reduce((sum, item) => {
-        // If an item is shared among multiple people, split its cost
         return sum + item.price / item.assignedTo.length;
       }, 0);
 
@@ -158,20 +137,22 @@ export default function ResultsScreen() {
           <Ionicons
             name={isSelected ? "checkbox" : "square-outline"}
             size={22}
-            color={isSelected ? "#0a7ea4" : "#687076"}
+            color={isSelected ? "#0ea5e9" : "#6b7280"}
             style={{ marginRight: 8 }}
           />
           <View className="flex-1">
-            <Text className="text-base">{item.name}</Text>
+            <Text className="text-base text-gray-800">{item.name}</Text>
             {sharedCount > 1 && (
-              <Text className="text-xs text-sky-600">
+              <Text className="text-xs text-sky-500">
                 Shared with {sharedCount} people ($
                 {(item.price / sharedCount).toFixed(2)} each)
               </Text>
             )}
           </View>
         </View>
-        <Text className="text-base font-bold">${item.price.toFixed(2)}</Text>
+        <Text className="text-base font-bold text-gray-800">
+          ${item.price.toFixed(2)}
+        </Text>
       </TouchableOpacity>
     );
   };
@@ -181,12 +162,12 @@ export default function ResultsScreen() {
       key={index}
       onPress={() => setActivePersonIndex(index)}
       className={`py-2 px-4 rounded-full mr-2 ${
-        activePersonIndex === index ? "bg-sky-600" : "bg-gray-200"
+        activePersonIndex === index ? "bg-sky-400" : "bg-gray-200"
       }`}
     >
       <Text
         className={`${
-          activePersonIndex === index ? "text-white" : "text-gray-700"
+          activePersonIndex === index ? "text-gray-800" : "text-gray-600"
         }`}
       >
         {name}
@@ -198,13 +179,15 @@ export default function ResultsScreen() {
   const total = items.reduce((sum, item) => sum + item.price, 0);
 
   return (
-    <View className="flex-1">
+    <View className="flex-1 bg-gray-50">
       {!showSplitSummary ? (
         // Bill splitting screen
         <View className="flex-1 p-5">
           <View className="mb-2">
-            <Text className="text-2xl font-bold mb-1">Receipt Items</Text>
-            <Text className="text-base opacity-70 mb-3">
+            <Text className="text-2xl font-bold mb-1 text-gray-800">
+              Receipt Items
+            </Text>
+            <Text className="text-base text-gray-600 mb-3">
               Select items for each person
             </Text>
 
@@ -218,21 +201,22 @@ export default function ResultsScreen() {
             {/* Add person input */}
             <View className="flex-row mb-4">
               <TextInput
-                className="flex-1 border border-gray-300 rounded-l-lg px-3 py-2"
+                className="flex-1 border border-gray-300 rounded-l-lg px-3 py-2 bg-white text-gray-800"
                 placeholder="Add person"
+                placeholderTextColor="#9ca3af"
                 value={newPersonName}
                 onChangeText={setNewPersonName}
               />
               <TouchableOpacity
-                className="bg-sky-600 px-4 justify-center items-center rounded-r-lg"
+                className="bg-sky-400 px-4 justify-center items-center rounded-r-lg"
                 onPress={addPerson}
               >
-                <Text className="text-white font-bold">Add</Text>
+                <Text className="text-gray-800 font-bold">Add</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          <Text className="font-bold text-base opacity-80 mb-1">
+          <Text className="font-bold text-base text-gray-700 mb-1">
             Select items for {people[activePersonIndex]}:
           </Text>
 
@@ -245,25 +229,27 @@ export default function ResultsScreen() {
           />
 
           <View className="flex-row justify-between py-4 border-t-2 border-gray-200">
-            <Text className="text-lg font-bold">Total</Text>
-            <Text className="text-lg font-bold">${total.toFixed(2)}</Text>
+            <Text className="text-lg font-bold text-gray-800">Total</Text>
+            <Text className="text-lg font-bold text-gray-800">
+              ${total.toFixed(2)}
+            </Text>
           </View>
 
           <View className="flex-row justify-between mt-5 gap-3">
             <TouchableOpacity
-              className="flex-1 py-4 rounded-lg items-center justify-center border-2 border-sky-600"
-              onPress={handleBack}
+              className="flex-1 py-4 rounded-lg items-center justify-center border-2 border-sky-400"
+              onPress={() => router.push("/")}
             >
-              <Text className="font-bold text-base text-sky-600">
+              <Text className="font-bold text-base text-sky-500">
                 Back Home
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="flex-1 py-4 rounded-lg items-center justify-center bg-sky-600"
+              className="flex-1 py-4 rounded-lg items-center justify-center bg-sky-400"
               onPress={() => setShowSplitSummary(true)}
             >
-              <Text className="font-bold text-base text-white">
+              <Text className="font-bold text-base text-gray-800">
                 View Summary
               </Text>
             </TouchableOpacity>
@@ -273,8 +259,10 @@ export default function ResultsScreen() {
         // Split summary screen
         <View className="flex-1 p-5">
           <View className="mb-5">
-            <Text className="text-2xl font-bold mb-1">Split Summary</Text>
-            <Text className="text-base opacity-70">
+            <Text className="text-2xl font-bold mb-1 text-gray-800">
+              Split Summary
+            </Text>
+            <Text className="text-base text-gray-600">
               Here's what each person owes
             </Text>
           </View>
@@ -282,15 +270,17 @@ export default function ResultsScreen() {
           {calculateSplitSummary().map((person, index) => (
             <View
               key={index}
-              className="mb-4 p-4 bg-white rounded-lg shadow-sm"
+              className="mb-4 p-4 bg-white rounded-lg shadow-sm border border-gray-200"
             >
               <View className="flex-row justify-between mb-2">
-                <Text className="text-lg font-bold">{person.name}</Text>
-                <Text className="text-lg font-bold text-sky-600">
+                <Text className="text-lg font-bold text-gray-800">
+                  {person.name}
+                </Text>
+                <Text className="text-lg font-bold text-sky-500">
                   ${person.amount.toFixed(2)}
                 </Text>
               </View>
-              <Text className="text-sm opacity-70">
+              <Text className="text-sm text-gray-600">
                 {person.items.length > 0
                   ? `Items: ${person.items.join(", ")}`
                   : "No items selected"}
@@ -300,19 +290,19 @@ export default function ResultsScreen() {
 
           <View className="flex-row justify-between mt-auto gap-3">
             <TouchableOpacity
-              className="flex-1 py-4 rounded-lg items-center justify-center border-2 border-sky-600"
+              className="flex-1 py-4 rounded-lg items-center justify-center border-2 border-sky-400"
               onPress={() => setShowSplitSummary(false)}
             >
-              <Text className="font-bold text-base text-sky-600">
+              <Text className="font-bold text-base text-sky-500">
                 Back to Items
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="flex-1 py-4 rounded-lg items-center justify-center bg-sky-600"
+              className="flex-1 py-4 rounded-lg items-center justify-center bg-sky-400"
               onPress={handleShare}
             >
-              <Text className="font-bold text-base text-white">
+              <Text className="font-bold text-base text-gray-800">
                 Share Summary
               </Text>
             </TouchableOpacity>

@@ -37,7 +37,7 @@ export default function HomeScreen() {
     <ParallaxScrollView>
       <View className="items-center">
         <View className="w-20 h-20 mb-4 rounded-full bg-sky-100 items-center justify-center">
-          <Ionicons name="receipt-outline" size={40} color="#0a7ea4" />
+          <Ionicons name="receipt-outline" size={40} color="#0ea5e9" />
         </View>
 
         <ThemedText className="text-3xl font-bold mb-2 text-center">
@@ -50,10 +50,10 @@ export default function HomeScreen() {
         </ThemedText>
 
         <TouchableOpacity
-          className="w-full py-4 px-8 rounded-full items-center justify-center bg-sky-600 active:bg-sky-700 shadow-md mb-8"
+          className="w-full py-4 px-8 rounded-full items-center justify-center bg-sky-400 active:bg-sky-500 shadow-md mb-8"
           onPress={handleScanPress}
         >
-          <Text className="text-white text-lg font-bold">Scan Receipt</Text>
+          <Text className="text-gray-800 text-lg font-bold">Scan Receipt</Text>
         </TouchableOpacity>
 
         <View className="w-full">
@@ -64,7 +64,7 @@ export default function HomeScreen() {
           {features.map((feature, index) => (
             <View key={index} className="flex-row mb-5">
               <View className="w-12 h-12 rounded-full bg-sky-50 items-center justify-center mr-4">
-                <Ionicons name={feature.icon} size={24} color="#0a7ea4" />
+                <Ionicons name={feature.icon} size={24} color="#0ea5e9" />
               </View>
               <View className="flex-1">
                 <ThemedText className="font-bold text-base">
