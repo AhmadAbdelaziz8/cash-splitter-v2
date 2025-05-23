@@ -1,6 +1,15 @@
 import { router } from "expo-router";
 import { useState, useRef, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Button } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Linking,
+  Platform,
+  LogBox,
+} from "react-native";
 
 import {
   SafeAreaView,
@@ -11,17 +20,76 @@ import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useReceipt } from "@/contexts/ReceiptContext";
 
+// Ignore specific warnings related to expo-camera
+LogBox.ignoreLogs(["ViewPropTypes will be removed from React Native"]);
+
 export default function CameraScreen() {
   const insets = useSafeAreaInsets();
-  const cameraRef = useRef<any>(null);
+  const cameraRef = useRef<CameraView>(null);
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
+  const [permissionStatus, setPermissionStatus] = useState<string>("unknown");
+  const [isCameraReady, setIsCameraReady] = useState(false);
   const { resetState } = useReceipt();
 
   // Reset receipt state when opening camera
   useEffect(() => {
     resetState();
-  }, []);
+
+    if (permission) {
+      setPermissionStatus(permission.granted ? "granted" : "denied");
+    }
+
+    // Auto-request camera permission when component mounts
+    const checkAndRequestPermission = async () => {
+      if (permission && !permission.granted) {
+        console.log("Camera permission not granted, requesting...");
+        await requestCameraPermission();
+      }
+    };
+
+    checkAndRequestPermission();
+  }, [permission]);
+
+  // Separate function to handle permission request
+  const requestCameraPermission = async () => {
+    try {
+      console.log("Requesting camera permission...");
+      const result = await requestPermission();
+
+      console.log("Permission request result:", result);
+      setPermissionStatus(result.granted ? "granted" : "denied");
+
+      // If permission is still denied after request
+      if (!result.granted) {
+        console.log("Permission denied after request, showing alert");
+        Alert.alert(
+          "Camera Permission Required",
+          "This app needs camera access to function properly. Please grant permission in your device settings.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Open Settings",
+              onPress: () => {
+                console.log("Opening settings...");
+                Linking.openSettings();
+              },
+            },
+          ]
+        );
+      } else {
+        console.log("Camera permission successfully granted!");
+      }
+    } catch (error) {
+      console.error("Error requesting camera permission:", error);
+      setPermissionStatus("error");
+    }
+  };
+
+  const handleCameraReady = () => {
+    console.log("Camera is ready");
+    setIsCameraReady(true);
+  };
 
   const handleBack = () => {
     router.back();
@@ -32,24 +100,70 @@ export default function CameraScreen() {
   };
 
   const handleCapturePhoto = async () => {
-    if (cameraRef.current) {
-      try {
-        const photo = await cameraRef.current.takePictureAsync();
+    if (!isCameraReady) {
+      console.log("Camera not ready yet");
+      Alert.alert(
+        "Camera not ready",
+        "Please wait for the camera to initialize"
+      );
+      return;
+    }
+
+    if (!cameraRef.current) {
+      console.log("Camera ref is null");
+      return;
+    }
+
+    try {
+      console.log("Attempting to take picture...");
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+        skipProcessing: false, // Make sure processing is not skipped
+        base64: false,
+      });
+
+      console.log("Picture taken successfully:", photo.uri);
+
+      if (photo && photo.uri) {
         router.push({
           pathname: "/preview",
           params: { imageUri: photo.uri },
         });
-      } catch (error) {
-        console.error("Failed to take picture:", error);
+      } else {
+        console.error("Photo object or URI is undefined");
+        Alert.alert("Error", "Failed to capture photo");
       }
+    } catch (error) {
+      console.error("Failed to take picture:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      Alert.alert("Error", `Failed to take picture: ${errorMessage}`);
     }
   };
 
   const handleSelectFromGallery = async () => {
     try {
+      // Request media library permissions
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission Required",
+          "We need access to your photo library to select images.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Settings", onPress: () => Linking.openSettings() },
+          ]
+        );
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.8,
+        allowsEditing: true,
+        aspect: [4, 3],
       });
 
       if (!result.canceled) {
@@ -60,6 +174,7 @@ export default function CameraScreen() {
       }
     } catch (error) {
       console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to access photo library");
     }
   };
 
@@ -75,11 +190,32 @@ export default function CameraScreen() {
   if (!permission.granted) {
     // Camera permissions are not granted yet.
     return (
-      <View className="flex-1 justify-center items-center p-4">
-        <Text className="text-lg mb-4 text-center">
+      <View className="flex-1 justify-center items-center p-4 bg-black">
+        <Text className="text-lg mb-4 text-center text-white">
           We need your permission to use the camera
         </Text>
-        <Button onPress={requestPermission} title="Grant Permission" />
+        <Text className="text-sm mb-6 text-center text-gray-300">
+          Permission status: {permissionStatus}
+          {Platform.OS === "android" && ` (Android ${Platform.Version})`}
+        </Text>
+        <TouchableOpacity
+          className="bg-blue-500 py-3 px-6 rounded-md"
+          onPress={requestCameraPermission}
+        >
+          <Text className="text-white font-bold text-center text-base">
+            GRANT PERMISSION
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          className="mt-4 py-2 px-4"
+          onPress={() => {
+            console.log("Opening settings directly");
+            Linking.openSettings();
+          }}
+        >
+          <Text className="text-blue-300 text-center">Open Settings</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -91,6 +227,8 @@ export default function CameraScreen() {
         className="flex-1"
         facing={facing}
         style={{ flex: 1 }}
+        onCameraReady={handleCameraReady}
+        autofocus="on"
       >
         {/* Top Control Bar */}
         <SafeAreaView className="absolute top-0 left-0 right-0">
@@ -124,6 +262,7 @@ export default function CameraScreen() {
             <TouchableOpacity
               className="bg-white p-1 rounded-full"
               onPress={handleCapturePhoto}
+              disabled={!isCameraReady}
             >
               <View className="h-16 w-16 rounded-full border-2 border-white" />
             </TouchableOpacity>

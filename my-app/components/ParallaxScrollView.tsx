@@ -11,7 +11,8 @@ import { ThemedView } from "@/components/ThemedView";
 import { useBottomTabOverflow } from "@/components/ui/TabBarBackground";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
-const HEADER_HEIGHT = 250;
+// Further reduce header height
+const HEADER_HEIGHT = 30;
 
 type Props = PropsWithChildren<{
   headerImage?: ReactElement;
@@ -54,21 +55,26 @@ export default function ParallaxScrollView({
         ref={scrollRef}
         scrollEventThrottle={16}
         scrollIndicatorInsets={{ bottom }}
-        contentContainerStyle={{ paddingBottom: bottom }}
+        contentContainerStyle={{
+          paddingBottom: bottom,
+          paddingTop: 15,
+        }}
       >
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              backgroundColor: headerBackgroundColor
-                ? headerBackgroundColor[colorScheme]
-                : "transparent",
-            },
-            headerAnimatedStyle,
-          ]}
-        >
-          {headerImage}
-        </Animated.View>
+        {headerImage && (
+          <Animated.View
+            style={[
+              styles.header,
+              {
+                backgroundColor: headerBackgroundColor
+                  ? headerBackgroundColor[colorScheme]
+                  : "transparent",
+              },
+              headerAnimatedStyle,
+            ]}
+          >
+            {headerImage}
+          </Animated.View>
+        )}
         <ThemedView style={styles.content}>{children}</ThemedView>
       </Animated.ScrollView>
     </ThemedView>
@@ -85,7 +91,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 32,
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    paddingBottom: 32,
     gap: 16,
     overflow: "hidden",
   },
