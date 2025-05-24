@@ -26,13 +26,7 @@ export async function parseReceiptImage(
   base64Image: string,
   mimeType: string = "image/jpeg"
 ): Promise<ParseResult> {
-  console.log("🔍 Starting receipt parsing...");
-  console.log("🔑 API Key available:", !!API_KEY);
-  console.log("🖼️ Image data length:", base64Image?.length || 0);
-  console.log("📄 MIME Type:", mimeType);
-
   if (!API_KEY) {
-    console.error("❌ Google API Key not configured");
     return {
       success: false,
       error: "Google API Key not configured. Please check your .env file.",
@@ -41,21 +35,17 @@ export async function parseReceiptImage(
   }
 
   try {
-    console.log("🚀 Initializing Gemini AI...");
     const genAI = new GoogleGenerativeAI(API_KEY);
-
-    // Use a proper vision-capable model
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash-preview-05-20",
     });
 
-    // Strip data URL prefix if it exists (e.g., "data:image/jpeg;base64,")
+    // Strip data URL prefix if it exists
     let cleanBase64 = base64Image;
     if (base64Image.startsWith("data:")) {
       const base64Index = base64Image.indexOf(",");
       if (base64Index !== -1) {
         cleanBase64 = base64Image.substring(base64Index + 1);
-        console.log("🧹 Stripped data URL prefix from base64");
       }
     }
 
@@ -66,7 +56,6 @@ export async function parseReceiptImage(
       },
     };
 
-    // Enhanced prompt for better JSON reliability
     const prompt = `Analyze this receipt image and extract all items with their prices.
 
 CRITICAL: Return ONLY a valid JSON object in this EXACT format:
@@ -81,43 +70,27 @@ Rules:
 Example output:
 {"items": [{"itemName": "Coffee", "itemPrice": 4.50}], "total": 4.50}`;
 
-    console.log("📤 Sending request to Gemini...");
     const result = await model.generateContent([prompt, imagePart]);
     const response = result.response;
     const text = response.text().trim();
 
-    console.log("📥 Raw Gemini response:", text);
-
-    // Robust JSON parsing with multiple fallback strategies
     let parsedData: ParsedReceiptData;
 
     try {
-      // Strategy 1: Direct parse (most reliable when prompt is followed)
       parsedData = JSON.parse(text);
-      console.log("✅ Direct JSON parse successful");
     } catch (directParseError) {
-      console.warn("⚠️ Direct JSON parse failed, trying extraction methods...");
-
       try {
-        // Strategy 2: Extract from markdown code blocks
         const codeBlockMatch = text.match(/```(?:json)?\s*(\{.*?\})\s*```/s);
         if (codeBlockMatch) {
           parsedData = JSON.parse(codeBlockMatch[1]);
-          console.log("✅ Code block extraction successful");
         } else {
-          // Strategy 3: Regex extraction for JSON object
           const jsonMatch = text.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/s);
           if (!jsonMatch) {
             throw new Error("No JSON structure found in response");
           }
           parsedData = JSON.parse(jsonMatch[0]);
-          console.log("✅ Regex extraction successful");
         }
       } catch (extractionError) {
-        console.error(
-          "❌ All JSON extraction methods failed:",
-          extractionError
-        );
         const errorMsg =
           extractionError instanceof Error
             ? extractionError.message
@@ -126,24 +99,19 @@ Example output:
       }
     }
 
-    // Validate parsed data structure
     const validationResult = validateParsedData(parsedData);
     if (!validationResult.isValid) {
-      console.error("❌ Data validation failed:", validationResult.error);
       throw new Error(`Invalid data structure: ${validationResult.error}`);
     }
 
-    console.log("✅ Receipt parsing successful:", parsedData);
     return {
       success: true,
       data: parsedData,
     };
   } catch (error) {
-    console.error("❌ Receipt parsing failed:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
 
-    console.log("🔄 Falling back to mock data due to error");
     return {
       success: false,
       error: errorMessage,
@@ -165,14 +133,12 @@ function validateParsedData(data: any): { isValid: boolean; error?: string } {
     return { isValid: false, error: "Total is not a number or string" };
   }
 
-  // Validate and convert items
   for (let i = 0; i < data.items.length; i++) {
     const item = data.items[i];
     if (!item.itemName || typeof item.itemName !== "string") {
       return { isValid: false, error: `Item ${i} has invalid itemName` };
     }
 
-    // Convert string prices to numbers if needed
     if (typeof item.itemPrice === "string") {
       const parsed = parseFloat(item.itemPrice);
       if (isNaN(parsed)) {
@@ -190,7 +156,6 @@ function validateParsedData(data: any): { isValid: boolean; error?: string } {
     }
   }
 
-  // Convert total to number if needed
   if (typeof data.total === "string") {
     const parsed = parseFloat(data.total);
     if (isNaN(parsed)) {
@@ -203,7 +168,6 @@ function validateParsedData(data: any): { isValid: boolean; error?: string } {
 }
 
 function getMockData(): ParsedReceiptData {
-  console.log("📋 Using mock receipt data");
   return {
     items: [
       { itemName: "Burger", itemPrice: 10.99 },

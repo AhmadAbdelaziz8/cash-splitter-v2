@@ -7,8 +7,8 @@ import {
   Alert,
   Image,
   ActivityIndicator,
-  Platform,
 } from "react-native";
+
 import { parseImage } from "../utils/imageUtils";
 import { useReceipt } from "@/contexts/ReceiptContext";
 
@@ -68,13 +68,7 @@ export default function PreviewScreen() {
                 accessibilityLabel="Preview of captured receipt"
               />
             </View>
-            <Text
-              className="text-xs text-gray-500 p-1 bg-gray-100 rounded break-all self-stretch text-center mt-2"
-              numberOfLines={1}
-              ellipsizeMode="middle"
-            >
-              URI: {imageUri}
-            </Text>
+        
           </View>
         ) : (
           <View className="flex-1 justify-center items-center">

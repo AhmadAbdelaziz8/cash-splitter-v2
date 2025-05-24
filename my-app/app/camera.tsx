@@ -8,7 +8,6 @@ import {
   Alert,
   Linking,
   Platform,
-  LogBox,
 } from "react-native";
 
 import {
@@ -19,9 +18,6 @@ import { CameraView, useCameraPermissions, CameraType } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useReceipt } from "@/contexts/ReceiptContext";
-
-// Ignore specific warnings related to expo-camera
-LogBox.ignoreLogs(["ViewPropTypes will be removed from React Native"]);
 
 const styles = StyleSheet.create({
   cameraContainer: {
@@ -87,15 +83,12 @@ export default function CameraScreen() {
   const [isCameraReady, setIsCameraReady] = useState(false);
   const { resetState } = useReceipt();
 
-  // Reset receipt state when opening camera
   useEffect(() => {
     resetState();
-
     if (permission) {
       setPermissionStatus(permission.granted ? "granted" : "denied");
     }
 
-    // Auto-request camera permission when component mounts
     const checkAndRequestPermission = async () => {
       if (permission && !permission.granted) {
         await requestCameraPermission();
@@ -128,6 +121,7 @@ export default function CameraScreen() {
   };
 
   const handleCameraReady = () => {
+    console.log("Camera is ready");
     setIsCameraReady(true);
   };
 
@@ -148,28 +142,70 @@ export default function CameraScreen() {
       return;
     }
 
-    if (!cameraRef.current) return;
+    if (!cameraRef.current) {
+      Alert.alert("Error", "Camera reference not available");
+      return;
+    }
 
     try {
+      // Add a small delay to ensure camera is fully ready
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.8,
+        quality: 0.7, // Reduced quality for better mobile performance
         skipProcessing: false,
         base64: false,
+        exif: false, // Disable EXIF data to reduce file size
       });
 
       if (photo?.uri) {
-        router.push({
-          pathname: "/preview",
-          params: { imageUri: photo.uri },
-        });
+        // Validate that the URI exists and is accessible
+        if (Platform.OS === "android" && !photo.uri.startsWith("file://")) {
+          // On some Android devices, we need to ensure proper file URI format
+          const formattedUri = photo.uri.startsWith("/")
+            ? `file://${photo.uri}`
+            : photo.uri;
+          router.push({
+            pathname: "/preview",
+            params: { imageUri: formattedUri },
+          });
+        } else {
+          router.push({
+            pathname: "/preview",
+            params: { imageUri: photo.uri },
+          });
+        }
       } else {
-        Alert.alert("Error", "Failed to capture photo");
+        Alert.alert(
+          "Error",
+          "Failed to capture photo - no image data received"
+        );
       }
     } catch (error) {
       console.error("Failed to take picture:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      Alert.alert("Error", `Failed to take picture: ${errorMessage}`);
+
+      // Provide more specific error messages
+      let errorMessage = "Unknown error occurred";
+      if (error instanceof Error) {
+        if (error.message.includes("Camera is not running")) {
+          errorMessage = "Camera is not active. Please restart the camera.";
+        } else if (error.message.includes("permission")) {
+          errorMessage =
+            "Camera permission issue. Please check app permissions.";
+        } else if (
+          error.message.includes("storage") ||
+          error.message.includes("disk")
+        ) {
+          errorMessage = "Not enough storage space to save the photo.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      Alert.alert("Camera Error", `Failed to take picture: ${errorMessage}`, [
+        { text: "Try Again", style: "default" },
+        { text: "Select from Gallery", onPress: handleSelectFromGallery },
+      ]);
     }
   };
 
@@ -257,6 +293,17 @@ export default function CameraScreen() {
         facing={facing}
         onCameraReady={handleCameraReady}
         autofocus="on"
+        onMountError={(error) => {
+          console.error("Camera mount error:", error);
+          Alert.alert(
+            "Camera Error",
+            "Failed to initialize camera. This might be due to another app using the camera or hardware issues.",
+            [
+              { text: "Try Again", onPress: () => router.replace("/camera") },
+              { text: "Use Gallery", onPress: handleSelectFromGallery },
+            ]
+          );
+        }}
       >
         <View style={[styles.topOverlay, { paddingTop: insets.top }]}>
           <SafeAreaView>

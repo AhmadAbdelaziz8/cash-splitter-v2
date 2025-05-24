@@ -27,7 +27,11 @@ alwaysApply: false
 | (Loads from URL, participants select items, JS calculates totals) |
 +-------------------------------------------------------------------+
 ```
+📱 App Process:
+1. Camera captures receipt → 2. AI processes receipt → 3. Generate web URL → 4. Open/share URL
 
+🌐 Web Process:
+1. Receive URL with data → 2. Parse parameters → 3. Display receipt items → 4. Allow bill splitting
 ---
 
 **2. Tech Stack:**
