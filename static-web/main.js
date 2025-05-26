@@ -147,8 +147,143 @@ function updateTotalDisplay(total) {
   `;
 }
 
+/**
+ * Add event listeners for quick action buttons
+ */
+function addQuickActionListeners() {
+  // Select All button
+  const selectAllBtn = document.getElementById("select-all-btn");
+  if (selectAllBtn) {
+    selectAllBtn.addEventListener("click", () => {
+      mockReceiptData.forEach((_, index) => {
+        const checkbox = document.getElementById(`item-${index}`);
+        if (checkbox) {
+          checkbox.checked = true;
+        }
+      });
+      calculateUserTotal();
+    });
+  }
+
+  // Clear All button
+  const clearAllBtn = document.getElementById("clear-all-btn");
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener("click", () => {
+      mockReceiptData.forEach((_, index) => {
+        const checkbox = document.getElementById(`item-${index}`);
+        if (checkbox) {
+          checkbox.checked = false;
+        }
+      });
+      calculateUserTotal();
+    });
+  }
+
+  // Share Result button
+  const shareBtn = document.getElementById("share-btn");
+  if (shareBtn) {
+    shareBtn.addEventListener("click", shareResult);
+  }
+}
+
+/**
+ * Share the result (copy to clipboard or use Web Share API)
+ */
+async function shareResult() {
+  const selectedItems = [];
+  let userTotal = 0;
+
+  mockReceiptData.forEach((item, index) => {
+    const checkbox = document.getElementById(`item-${index}`);
+    const peopleInput = document.getElementById(`people-${index}`);
+
+    if (checkbox && checkbox.checked && peopleInput) {
+      const peopleCount = parseInt(peopleInput.value) || 1;
+      const userShare = item.total / peopleCount;
+      userTotal += userShare;
+
+      selectedItems.push({
+        name: item.name,
+        total: item.total,
+        people: peopleCount,
+        yourShare: userShare,
+      });
+    }
+  });
+
+  const shareText = `💰 My Bill Split Results\n\n${selectedItems
+    .map(
+      (item) =>
+        `${item.name}: $${item.yourShare.toFixed(2)} (split ${
+          item.people
+        } ways)`
+    )
+    .join("\n")}\n\n🧾 My Total: $${userTotal.toFixed(
+    2
+  )}\n\nSplit with Cash Splitter 📱`;
+
+  try {
+    // Try Web Share API first (mobile)
+    if (navigator.share) {
+      await navigator.share({
+        title: "My Bill Split Results",
+        text: shareText,
+        url: window.location.href,
+      });
+    } else {
+      // Fallback to clipboard
+      await navigator.clipboard.writeText(shareText);
+      showNotification("💾 Results copied to clipboard!");
+    }
+  } catch (error) {
+    console.error("Error sharing:", error);
+    // Final fallback - show the text in a prompt
+    prompt("Copy this text to share your results:", shareText);
+  }
+}
+
+/**
+ * Show a temporary notification
+ */
+function showNotification(message) {
+  const notification = document.createElement("div");
+  notification.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #10b981;
+    color: white;
+    padding: 16px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    z-index: 2000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    animation: fadeInOut 2s ease-in-out;
+  `;
+  notification.textContent = message;
+
+  // Add CSS animation
+  const style = document.createElement("style");
+  style.textContent = `
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+      20%, 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  document.body.appendChild(notification);
+
+  setTimeout(() => {
+    document.body.removeChild(notification);
+    document.head.removeChild(style);
+  }, 2000);
+}
+
 // Initialize everything when page loads
 window.addEventListener("DOMContentLoaded", () => {
   displayReceiptItems(mockReceiptData);
   calculateUserTotal(); // Initialize with $0.00
+  addQuickActionListeners();
 });

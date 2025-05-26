@@ -39,9 +39,18 @@ export const MESSAGES = {
     "Calculating totals...",
     "Preparing results...",
   ],
+  WEB_URL_GENERATED: "Web link created! Share with your friends.",
+  WEB_URL_ERROR: "Failed to create web link. Using fallback sharing.",
+  WEB_URL_TOO_LONG: "Receipt data too large for URL. Using summary sharing.",
 } as const;
 
 export const API = {
   GEMINI_MODEL: "gemini-2.5-flash-preview-05-20",
   DEFAULT_MIME_TYPE: "image/jpeg",
+} as const;
+
+export const WEB_SHARING = {
+  BASE_URL: process.env.EXPO_PUBLIC_WEB_BASE_URL || "https://yoursite.com",
+  MAX_URL_LENGTH: 2048, // Browser URL length limit
+  FALLBACK_SHARE_MESSAGE: "Check out this bill split calculation!",
 } as const;

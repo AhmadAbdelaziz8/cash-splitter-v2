@@ -13,6 +13,7 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useReceipt, ReceiptItem } from "@/contexts/ReceiptContext";
+import { useWebSharing } from "@/hooks/useWebSharing";
 
 // Define styles for non-compatible components
 const styles = StyleSheet.create({
@@ -36,6 +37,14 @@ export default function ResultsScreen() {
   const [activePersonIndex, setActivePersonIndex] = useState<number>(0);
   const [showSplitSummary, setShowSplitSummary] = useState<boolean>(false);
 
+  const {
+    isGeneratingUrl,
+    generateAndShareWebUrl,
+    generatePersonalizedUrl,
+    copyUrlToClipboard,
+    openInBrowser,
+  } = useWebSharing();
+
   // Keep context in sync when items change
   useEffect(() => {
     setContextItems(items);
@@ -43,7 +52,35 @@ export default function ResultsScreen() {
 
   const handleShare = async () => {
     try {
-      // Format the bill splitting data for sharing
+      // Show options for different sharing methods
+      Alert.alert("Share Bill Split", "Choose how you'd like to share:", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Text Summary",
+          onPress: handleTraditionalShare,
+        },
+        {
+          text: "Web Link",
+          onPress: () => generateAndShareWebUrl(items),
+        },
+        {
+          text: "Copy Link",
+          onPress: () => copyUrlToClipboard(items),
+        },
+        {
+          text: "Open in Browser",
+          onPress: () => openInBrowser(items),
+        },
+      ]);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      Alert.alert("Error sharing", errorMessage);
+    }
+  };
+
+  const handleTraditionalShare = async () => {
+    try {
       const summary = calculateSplitSummary();
       let shareMessage = "Cash Splitter Summary:\n\n";
 
@@ -63,6 +100,14 @@ export default function ResultsScreen() {
         error instanceof Error ? error.message : "Unknown error occurred";
       Alert.alert("Error sharing", errorMessage);
     }
+  };
+
+  const handlePersonalShare = (personName: string) => {
+    const selectedItemIds = items
+      .filter((item) => item.assignedTo.includes(personName))
+      .map((item) => item.id);
+
+    generatePersonalizedUrl(items, personName, selectedItemIds);
   };
 
   const addPerson = () => {
@@ -256,14 +301,14 @@ export default function ResultsScreen() {
           </View>
         </View>
       ) : (
-        // Split summary screen
+        // Enhanced split summary screen
         <View className="flex-1 p-5">
           <View className="mb-5">
             <Text className="text-2xl font-bold mb-1 text-gray-800">
               Split Summary
             </Text>
             <Text className="text-base text-gray-600">
-              Here's what each person owes
+                  Heres what each person owes
             </Text>
           </View>
 
@@ -280,11 +325,22 @@ export default function ResultsScreen() {
                   ${person.amount.toFixed(2)}
                 </Text>
               </View>
-              <Text className="text-sm text-gray-600">
+              <Text className="text-sm text-gray-600 mb-2">
                 {person.items.length > 0
                   ? `Items: ${person.items.join(", ")}`
                   : "No items selected"}
               </Text>
+
+              {/* Add individual share button */}
+              <TouchableOpacity
+                className="mt-2 py-2 px-3 bg-sky-100 rounded-lg"
+                onPress={() => handlePersonalShare(person.name)}
+                disabled={isGeneratingUrl}
+              >
+                <Text className="text-center text-sky-600 text-sm font-medium">
+                  📤 Send to {person.name}
+                </Text>
+              </TouchableOpacity>
             </View>
           ))}
 
@@ -301,9 +357,10 @@ export default function ResultsScreen() {
             <TouchableOpacity
               className="flex-1 py-4 rounded-lg items-center justify-center bg-sky-400"
               onPress={handleShare}
+              disabled={isGeneratingUrl}
             >
               <Text className="font-bold text-base text-gray-800">
-                Share Summary
+                {isGeneratingUrl ? "Generating..." : "Share Summary"}
               </Text>
             </TouchableOpacity>
           </View>

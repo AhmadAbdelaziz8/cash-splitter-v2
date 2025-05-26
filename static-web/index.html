@@ -5,26 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cash Splitter - Web</title>
     <link rel="stylesheet" href="styles.css" />
+    <!-- Add favicon and meta tags for better mobile sharing -->
+    <meta
+      name="description"
+      content="Split your bills easily with friends using Cash Splitter"
+    />
+    <meta property="og:title" content="Cash Splitter - Split Your Bill" />
+    <meta
+      property="og:description"
+      content="Calculate your share of the bill"
+    />
+    <meta property="og:type" content="website" />
   </head>
   <body>
     <div class="container">
-      <h1>💰 Cash Splitter</h1>
-
-      <!-- Debug section -->
-      <div id="debug">
-        <strong>Debug Info:</strong>
-        <div id="debug-content">Loading...</div>
-      </div>
+      <header class="app-header">
+        <h1>💰 Cash Splitter</h1>
+        <p class="subtitle">Select items to calculate your share</p>
+      </header>
 
       <!-- Receipt section -->
-      <section class="container">
+      <section class="receipt-section">
         <h2>📄 Receipt Items</h2>
-        
-        <!-- Calculate Button -->
+
+        <!-- Quick action buttons -->
+        <div class="quick-actions">
+          <button type="button" class="action-btn" id="select-all-btn">
+            ✅ Select All
+          </button>
+          <button type="button" class="action-btn" id="clear-all-btn">
+            ❌ Clear All
+          </button>
+          <button type="button" class="action-btn" id="share-btn">
+            📤 Share Result
+          </button>
+        </div>
+
+        <!-- Calculate Button (hidden initially) -->
         <button type="button" class="calculate-button">
           🧮 Calculate Split
         </button>
       </section>
+
+      <!-- Loading indicator -->
+      <div id="loading-indicator" style="display: none">
+        <div class="loading-spinner"></div>
+        <p>Loading receipt data...</p>
+      </div>
     </div>
 
     <script src="main.js"></script>

@@ -39,105 +39,189 @@ h1 {
   color: #666;
 }
 
-/* Receipt Section Styling */
+/* Updated Receipt Container Styling - More Compact & Stylish */
 .receipt-container {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr; /* Name takes more space */
-  gap: 10px;
-  margin-bottom: 15px;
-  padding: 15px;
-  background: #f8fafc;
+  grid-template-columns: 40px 2fr 1fr 120px 100px; /* More compact layout */
+  gap: 12px;
+  align-items: center;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
   border-radius: 12px;
-  border: 2px solid #e2e8f0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease;
+  min-height: 60px; /* Compact height */
 }
 
 .receipt-container:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.06);
   border-color: #0ea5e9;
 }
 
-/* Individual tile styling */
-.receipt-header,
-.receipt-price,
-.receipt-quantity,
-.receipt-total {
-  padding: 12px;
+/* Modern Checkbox Styling */
+.receipt-checkbox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.receipt-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  appearance: none;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.receipt-checkbox input[type="checkbox"]:checked {
+  background: #0ea5e9;
+  border-color: #0ea5e9;
+}
+
+.receipt-checkbox input[type="checkbox"]:checked::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Item Header - More Compact */
+.receipt-header {
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  color: #1e40af;
+  padding: 8px 12px; /* Reduced padding */
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px; /* Slightly smaller */
+  text-align: center;
+  border: 1px solid #93c5fd;
+}
+
+/* Price Styling - More Compact */
+.receipt-price {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #166534;
+  padding: 8px 12px; /* Reduced padding */
+  border-radius: 8px;
+  font-weight: bold;
+  text-align: center;
+  font-size: 14px;
+  border: 1px solid #86efac;
+}
+
+/* Modern People Input Container */
+.receipt-people {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Ultra Modern Number Input */
+.receipt-people input {
+  width: 60px;
+  height: 36px; /* Compact height */
+  padding: 0;
+  border: 2px solid #e5e7eb;
   border-radius: 8px;
   text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  background: linear-gradient(135deg, #ffffff, #f9fafb);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.receipt-people input:hover {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.receipt-people input:focus {
+  outline: none;
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+  background: white;
+}
+
+/* Stylish label */
+.receipt-people label {
+  font-size: 11px;
+  color: #6b7280;
   font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* User Share Display - More Compact */
+.receipt-user-share {
+  text-align: center;
+  font-weight: bold;
+  font-size: 14px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   transition: all 0.2s ease;
 }
 
-/* Item name tile */
-.receipt-header {
-  background: #dbeafe;
-  color: #1e40af;
-  text-align: left;
-  font-weight: 600;
-  font-size: 16px;
+/* Scrollable Container - More Compact */
+.receipt-items-container {
+  max-height: 320px; /* Reduced height for more compact view */
+  overflow-y: auto;
+  padding-right: 8px;
+  margin-bottom: 16px;
 }
 
-/* Price tile */
-.receipt-price {
-  background: #dcfce7;
-  color: #166534;
-  font-weight: bold;
+/* Custom Scrollbar - More Stylish */
+.receipt-items-container::-webkit-scrollbar {
+  width: 6px;
 }
 
-/* Quantity tile */
-.receipt-quantity {
-  background: #fef3c7;
-  color: #92400e;
-  font-weight: bold;
+.receipt-items-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
 }
 
-/* Total tile */
-.receipt-total {
-  background: #fce7f3;
-  color: #be185d;
-  font-weight: bold;
-  font-size: 16px;
+.receipt-items-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  border-radius: 6px;
 }
 
-/* Hover effects for individual tiles */
-.receipt-header:hover {
-  background: #bfdbfe;
-}
-.receipt-price:hover {
-  background: #bbf7d0;
-}
-.receipt-quantity:hover {
-  background: #fde68a;
-}
-.receipt-total:hover {
-  background: #f9a8d4;
+.receipt-items-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
 }
 
-/* Mobile responsive */
+/* Mobile Responsive - Keep it compact */
 @media (max-width: 600px) {
   .receipt-container {
     grid-template-columns: 1fr;
     gap: 8px;
+    padding: 12px;
   }
 
   .receipt-header,
-  .receipt-price,
-  .receipt-quantity,
-  .receipt-total {
+  .receipt-price {
     text-align: center;
-    padding: 10px;
+    padding: 6px 10px;
   }
 
-  .receipt-header {
-    text-align: center;
+  .receipt-people input {
+    width: 50px;
+    height: 32px;
   }
-}
-
-/* Add some spacing between multiple receipt containers */
-.receipt-container + .receipt-container {
-  margin-top: 10px;
 }
 
 /* Add this to your styles.css for the button */
@@ -166,34 +250,109 @@ h1 {
   transform: translateY(0);
 }
 
-/* Create a scrollable container for receipt items */
-.receipt-items-container {
-  max-height: 400px; /* Adjust this height as needed */
-  overflow-y: auto;
-  padding-right: 5px; /* Space for scrollbar */
-  margin-bottom: 20px;
-}
-
-/* Style the scrollbar */
-.receipt-items-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.receipt-items-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.receipt-items-container::-webkit-scrollbar-thumb {
-  background: #0ea5e9;
-  border-radius: 4px;
-}
-
-.receipt-items-container::-webkit-scrollbar-thumb:hover {
-  background: #0284c7;
-}
-
-/* Add some spacing between receipt items */
+/* Add some spacing between multiple receipt containers */
 .receipt-container + .receipt-container {
   margin-top: 10px;
+}
+
+/* Header Styling */
+.app-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  margin: -10px 0 0 0;
+  font-style: italic;
+}
+
+/* Quick Actions Styling */
+.quick-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff, #f9fafb);
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  min-width: 120px;
+  max-width: 150px;
+}
+
+.action-btn:hover {
+  border-color: #0ea5e9;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.15);
+}
+
+.action-btn:active {
+  transform: translateY(0);
+}
+
+/* Loading Indicator */
+#loading-indicator {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #0ea5e9;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px auto;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Enhanced Mobile Responsiveness */
+@media (max-width: 600px) {
+  .quick-actions {
+    flex-direction: column;
+  }
+
+  .action-btn {
+    max-width: none;
+  }
+
+  .receipt-container {
+    grid-template-columns: 35px 1fr 80px 100px 80px;
+    gap: 8px;
+    padding: 12px;
+    font-size: 12px;
+  }
+
+  .receipt-header {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
+  .receipt-price {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
 }
