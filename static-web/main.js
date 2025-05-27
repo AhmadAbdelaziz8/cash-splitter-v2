@@ -1,9 +1,34 @@
 const mockReceiptData = [
-  { name: "🍔 Burger", price: 10.99, quantity: 1, total: 10.99 },
-  { name: "🍟 Fries", price: 3.5, quantity: 2, total: 7.0 },
-  { name: "🥤 Soda", price: 2.5, quantity: 1, total: 2.5 },
-  { name: "🍰 Ice Cream", price: 4.99, quantity: 1, total: 4.99 },
+  { name: "🍔 Burger", price: 1099, quantity: 1 }, // Store price in cents
+  { name: "🍟 Fries", price: 350, quantity: 2 },
+  { name: "🥤 Soda", price: 250, quantity: 1 },
+  { name: "🍰 Ice Cream", price: 499, quantity: 1 },
 ];
+
+// Configuration constants
+const CONFIG = {
+  DEFAULT_PEOPLE_COUNT: 2,
+  MIN_PEOPLE_COUNT: 1,
+  MAX_PEOPLE_COUNT: 10,
+  CURRENCY_PRECISION: 2,
+  NOTIFICATION_DURATION: 2000,
+  COLORS: {
+    SELECTED: "#059669",
+    UNSELECTED: "#6b7280",
+    BACKGROUND_GRADIENT: "linear-gradient(135deg, #ecfdf5, #d1fae5)",
+    BORDER: "#10b981",
+    TEXT_DARK: "#065f46",
+  },
+};
+
+// Utility functions for currency handling
+function formatCurrency(cents) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+function parseCurrency(dollarString) {
+  return Math.round(parseFloat(dollarString.replace("$", "")) * 100);
+}
 
 function createReceiptTile(item, index) {
   // create the main container of the tile
@@ -27,16 +52,16 @@ function createReceiptTile(item, index) {
   // create the price of the tile
   const price = document.createElement("div");
   price.className = "receipt-price";
-  price.textContent = `$${item.total.toFixed(2)}`;
+  price.textContent = formatCurrency(item.total);
 
   // create people count input
   const peopleContainer = document.createElement("div");
   peopleContainer.className = "receipt-people";
   const peopleInput = document.createElement("input");
   peopleInput.type = "number";
-  peopleInput.min = "1";
-  peopleInput.max = "10";
-  peopleInput.value = "2"; // default 2 people
+  peopleInput.min = CONFIG.MIN_PEOPLE_COUNT.toString();
+  peopleInput.max = CONFIG.MAX_PEOPLE_COUNT.toString();
+  peopleInput.value = CONFIG.DEFAULT_PEOPLE_COUNT.toString();
   peopleInput.id = `people-${index}`;
   peopleInput.addEventListener("input", calculateUserTotal);
 
@@ -90,23 +115,22 @@ function displayReceiptItems(items) {
 }
 
 function calculateUserTotal() {
-  let userTotal = 0;
+  let userTotalCents = 0;
 
-  mockReceiptData.forEach((item, index) => {
+  receiptData.forEach((item, index) => {
     const checkbox = document.getElementById(`item-${index}`);
     const peopleInput = document.getElementById(`people-${index}`);
     const shareElement = document.getElementById(`share-${index}`);
 
     if (checkbox && peopleInput && shareElement) {
       const peopleCount = parseInt(peopleInput.value) || 1;
-      const userShare = item.total / peopleCount;
+      const userShareCents = Math.round(item.total / peopleCount);
 
-      // Update individual share display
       if (checkbox.checked) {
-        shareElement.textContent = `$${userShare.toFixed(2)}`;
+        shareElement.textContent = formatCurrency(userShareCents);
         shareElement.style.color = "#059669";
         shareElement.style.fontWeight = "bold";
-        userTotal += userShare;
+        userTotalCents += userShareCents;
       } else {
         shareElement.textContent = "$0.00";
         shareElement.style.color = "#6b7280";
@@ -115,11 +139,10 @@ function calculateUserTotal() {
     }
   });
 
-  // Update total display
-  updateTotalDisplay(userTotal);
+  updateTotalDisplay(userTotalCents);
 }
 
-function updateTotalDisplay(total) {
+function updateTotalDisplay(totalCents) {
   let totalDiv = document.getElementById("user-total");
   if (!totalDiv) {
     totalDiv = document.createElement("div");
@@ -139,7 +162,7 @@ function updateTotalDisplay(total) {
   totalDiv.innerHTML = `
     <h3 style="color: #065f46; margin: 0 0 10px 0;">💰 Your Total</h3>
     <div style="font-size: 28px; font-weight: bold; color: #059669;">
-      $${total.toFixed(2)}
+      ${formatCurrency(totalCents)}
     </div>
     <p style="color: #065f46; margin: 10px 0 0 0; font-size: 14px;">
       Based on items you selected and people sharing
@@ -147,15 +170,12 @@ function updateTotalDisplay(total) {
   `;
 }
 
-/**
- * Add event listeners for quick action buttons
- */
 function addQuickActionListeners() {
   // Select All button
   const selectAllBtn = document.getElementById("select-all-btn");
   if (selectAllBtn) {
     selectAllBtn.addEventListener("click", () => {
-      mockReceiptData.forEach((_, index) => {
+      receiptData.forEach((_, index) => {
         const checkbox = document.getElementById(`item-${index}`);
         if (checkbox) {
           checkbox.checked = true;
@@ -169,7 +189,7 @@ function addQuickActionListeners() {
   const clearAllBtn = document.getElementById("clear-all-btn");
   if (clearAllBtn) {
     clearAllBtn.addEventListener("click", () => {
-      mockReceiptData.forEach((_, index) => {
+      receiptData.forEach((_, index) => {
         const checkbox = document.getElementById(`item-${index}`);
         if (checkbox) {
           checkbox.checked = false;
@@ -186,14 +206,11 @@ function addQuickActionListeners() {
   }
 }
 
-/**
- * Share the result (copy to clipboard or use Web Share API)
- */
 async function shareResult() {
   const selectedItems = [];
   let userTotal = 0;
 
-  mockReceiptData.forEach((item, index) => {
+  receiptData.forEach((item, index) => {
     const checkbox = document.getElementById(`item-${index}`);
     const peopleInput = document.getElementById(`people-${index}`);
 
@@ -214,13 +231,11 @@ async function shareResult() {
   const shareText = `💰 My Bill Split Results\n\n${selectedItems
     .map(
       (item) =>
-        `${item.name}: $${item.yourShare.toFixed(2)} (split ${
-          item.people
-        } ways)`
+        `${item.name}: $${item.yourShare / 100} (split ${item.people} ways)`
     )
-    .join("\n")}\n\n🧾 My Total: $${userTotal.toFixed(
-    2
-  )}\n\nSplit with Cash Splitter 📱`;
+    .join("\n")}\n\n🧾 My Total: $${
+    userTotal / 100
+  }\n\nSplit with Cash Splitter 📱`;
 
   try {
     // Try Web Share API first (mobile)
@@ -281,9 +296,46 @@ function showNotification(message) {
   }, 2000);
 }
 
+// Helper function to normalize data
+function normalizeReceiptItem(item) {
+  return {
+    name: item.name,
+    price: item.price, // Always in cents
+    quantity: item.quantity || 1,
+    get total() {
+      return this.price * this.quantity; // Calculate total dynamically
+    },
+  };
+}
+
+function parseURLParameters() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const itemsParam = urlParams.get("items");
+
+  if (itemsParam) {
+    try {
+      const parsedItems = JSON.parse(decodeURIComponent(itemsParam));
+      return parsedItems.map(normalizeReceiptItem);
+    } catch (error) {
+      console.error("Error parsing URL items:", error);
+      return null;
+    }
+  }
+  return null;
+}
+
+// Update the global data variable
+let receiptData = mockReceiptData; // Default fallback
+
 // Initialize everything when page loads
 window.addEventListener("DOMContentLoaded", () => {
-  displayReceiptItems(mockReceiptData);
-  calculateUserTotal(); // Initialize with $0.00
+  // Parse URL parameters and use them if available
+  const urlData = parseURLParameters();
+  if (urlData && urlData.length > 0) {
+    receiptData = urlData;
+  }
+
+  displayReceiptItems(receiptData);
+  calculateUserTotal();
   addQuickActionListeners();
 });
