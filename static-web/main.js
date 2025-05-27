@@ -1,16 +1,16 @@
 const mockReceiptData = [
-  { name: "🍔 Burger", price: 1099, quantity: 1 }, // Store price in cents
-  { name: "🍟 Fries", price: 350, quantity: 2 },
-  { name: "🥤 Soda", price: 250, quantity: 1 },
-  { name: "🍰 Ice Cream", price: 499, quantity: 1 },
+  { name: "�� Burger", price: 45, quantity: 1 },
+  { name: "🍟 Fries", price: 20, quantity: 2 },
+  { name: "🥤 Soda", price: 15, quantity: 1 },
+  { name: "🍰 Ice Cream", price: 35, quantity: 1 },
 ];
 
-// Configuration constants
+// Configuration constants - NO CURRENCY SYMBOLS
 const CONFIG = {
   DEFAULT_PEOPLE_COUNT: 2,
   MIN_PEOPLE_COUNT: 1,
   MAX_PEOPLE_COUNT: 10,
-  CURRENCY_PRECISION: 2,
+  PRECISION: 2, // For decimal places only
   NOTIFICATION_DURATION: 2000,
   COLORS: {
     SELECTED: "#059669",
@@ -21,17 +21,12 @@ const CONFIG = {
   },
 };
 
-// Utility functions for currency handling
-function formatCurrency(cents) {
-  return `$${(cents / 100).toFixed(2)}`;
-}
-
-function parseCurrency(dollarString) {
-  return Math.round(parseFloat(dollarString.replace("$", "")) * 100);
+// Simple formatting - NO currency symbols, just the number
+function formatAmount(amount) {
+  return amount.toFixed(CONFIG.PRECISION);
 }
 
 function createReceiptTile(item, index) {
-  // create the main container of the tile
   const tile = document.createElement("div");
   tile.className = "receipt-container";
 
@@ -49,10 +44,10 @@ function createReceiptTile(item, index) {
   header.className = "receipt-header";
   header.textContent = item.name;
 
-  // create the price of the tile
+  // create the price of the tile - NO currency symbol
   const price = document.createElement("div");
   price.className = "receipt-price";
-  price.textContent = formatCurrency(item.total);
+  price.textContent = formatAmount(item.total);
 
   // create people count input
   const peopleContainer = document.createElement("div");
@@ -76,7 +71,7 @@ function createReceiptTile(item, index) {
   const userShare = document.createElement("div");
   userShare.className = "receipt-user-share";
   userShare.id = `share-${index}`;
-  userShare.textContent = "$0.00";
+  userShare.textContent = "0.00";
 
   // append the elements to the tile
   tile.appendChild(checkboxContainer);
@@ -115,7 +110,7 @@ function displayReceiptItems(items) {
 }
 
 function calculateUserTotal() {
-  let userTotalCents = 0;
+  let userTotal = 0;
 
   receiptData.forEach((item, index) => {
     const checkbox = document.getElementById(`item-${index}`);
@@ -124,25 +119,25 @@ function calculateUserTotal() {
 
     if (checkbox && peopleInput && shareElement) {
       const peopleCount = parseInt(peopleInput.value) || 1;
-      const userShareCents = Math.round(item.total / peopleCount);
+      const userShare = item.total / peopleCount;
 
       if (checkbox.checked) {
-        shareElement.textContent = formatCurrency(userShareCents);
-        shareElement.style.color = "#059669";
+        shareElement.textContent = formatAmount(userShare);
+        shareElement.style.color = CONFIG.COLORS.SELECTED;
         shareElement.style.fontWeight = "bold";
-        userTotalCents += userShareCents;
+        userTotal += userShare;
       } else {
-        shareElement.textContent = "$0.00";
-        shareElement.style.color = "#6b7280";
+        shareElement.textContent = "0.00";
+        shareElement.style.color = CONFIG.COLORS.UNSELECTED;
         shareElement.style.fontWeight = "normal";
       }
     }
   });
 
-  updateTotalDisplay(userTotalCents);
+  updateTotalDisplay(userTotal);
 }
 
-function updateTotalDisplay(totalCents) {
+function updateTotalDisplay(total) {
   let totalDiv = document.getElementById("user-total");
   if (!totalDiv) {
     totalDiv = document.createElement("div");
@@ -150,21 +145,27 @@ function updateTotalDisplay(totalCents) {
     totalDiv.style.cssText = `
       margin-top: 20px; 
       padding: 20px; 
-      background: linear-gradient(135deg, #ecfdf5, #d1fae5); 
+      background: ${CONFIG.COLORS.BACKGROUND_GRADIENT}; 
       border-radius: 12px; 
       text-align: center;
-      border-left: 5px solid #10b981;
+      border-left: 5px solid ${CONFIG.COLORS.BORDER};
     `;
-    document.querySelector(".calculate-button").style.display = "none"; // Hide the old button
+    document.querySelector(".calculate-button").style.display = "none";
     document.querySelector("section").appendChild(totalDiv);
   }
 
   totalDiv.innerHTML = `
-    <h3 style="color: #065f46; margin: 0 0 10px 0;">💰 Your Total</h3>
-    <div style="font-size: 28px; font-weight: bold; color: #059669;">
-      ${formatCurrency(totalCents)}
+    <h3 style="color: ${
+      CONFIG.COLORS.TEXT_DARK
+    }; margin: 0 0 10px 0;">💰 Your Total</h3>
+    <div style="font-size: 28px; font-weight: bold; color: ${
+      CONFIG.COLORS.SELECTED
+    };">
+      ${formatAmount(total)}
     </div>
-    <p style="color: #065f46; margin: 10px 0 0 0; font-size: 14px;">
+    <p style="color: ${
+      CONFIG.COLORS.TEXT_DARK
+    }; margin: 10px 0 0 0; font-size: 14px;">
       Based on items you selected and people sharing
     </p>
   `;
@@ -228,17 +229,19 @@ async function shareResult() {
     }
   });
 
+  // Format sharing text without currency symbols
   const shareText = `💰 My Bill Split Results\n\n${selectedItems
     .map(
       (item) =>
-        `${item.name}: $${item.yourShare / 100} (split ${item.people} ways)`
+        `${item.name}: ${formatAmount(item.yourShare)} (split ${
+          item.people
+        } ways)`
     )
-    .join("\n")}\n\n🧾 My Total: $${
-    userTotal / 100
-  }\n\nSplit with Cash Splitter 📱`;
+    .join("\n")}\n\n🧾 My Total: ${formatAmount(
+    userTotal
+  )}\n\nSplit with Cash Splitter 📱`;
 
   try {
-    // Try Web Share API first (mobile)
     if (navigator.share) {
       await navigator.share({
         title: "My Bill Split Results",
@@ -246,13 +249,11 @@ async function shareResult() {
         url: window.location.href,
       });
     } else {
-      // Fallback to clipboard
       await navigator.clipboard.writeText(shareText);
       showNotification("💾 Results copied to clipboard!");
     }
   } catch (error) {
     console.error("Error sharing:", error);
-    // Final fallback - show the text in a prompt
     prompt("Copy this text to share your results:", shareText);
   }
 }
@@ -296,18 +297,19 @@ function showNotification(message) {
   }, 2000);
 }
 
-// Helper function to normalize data
+// Helper function to normalize data - keep prices exactly as they are
 function normalizeReceiptItem(item) {
   return {
     name: item.name,
-    price: item.price, // Always in cents
+    price: item.price, // Keep exactly as provided - no conversion!
     quantity: item.quantity || 1,
     get total() {
-      return this.price * this.quantity; // Calculate total dynamically
+      return this.price * this.quantity;
     },
   };
 }
 
+// URL parsing - keep prices exactly as they come
 function parseURLParameters() {
   const urlParams = new URLSearchParams(window.location.search);
   const itemsParam = urlParams.get("items");
@@ -315,7 +317,16 @@ function parseURLParameters() {
   if (itemsParam) {
     try {
       const parsedItems = JSON.parse(decodeURIComponent(itemsParam));
-      return parsedItems.map(normalizeReceiptItem);
+
+      // Keep prices exactly as they come from URL - NO CONVERSION
+      return parsedItems.map((item) => ({
+        name: item.name,
+        price: item.price, // 230 stays 230, not 2.30
+        quantity: item.quantity || 1,
+        get total() {
+          return this.price * this.quantity;
+        },
+      }));
     } catch (error) {
       console.error("Error parsing URL items:", error);
       return null;
