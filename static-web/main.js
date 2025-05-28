@@ -1,4 +1,3 @@
-
 const CONFIG = {
   DEFAULT_PEOPLE_COUNT: 1,
   MIN_PEOPLE_COUNT: 1,
@@ -325,9 +324,7 @@ function parseURLParameters() {
   }
   return null;
 }
-
-// Update the global data variable
-let receiptData = mockReceiptData; // Default fallback
+let receiptData = [];
 
 // Initialize everything when page loads
 window.addEventListener("DOMContentLoaded", () => {
