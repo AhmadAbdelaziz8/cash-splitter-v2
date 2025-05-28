@@ -7,9 +7,8 @@ const mockReceiptData = [
 
 // Configuration constants - NO CURRENCY SYMBOLS
 const CONFIG = {
-  DEFAULT_PEOPLE_COUNT: 2,
+  DEFAULT_PEOPLE_COUNT: 1,
   MIN_PEOPLE_COUNT: 1,
-  MAX_PEOPLE_COUNT: 10,
   PRECISION: 2, // For decimal places only
   NOTIFICATION_DURATION: 2000,
   COLORS: {
@@ -21,7 +20,6 @@ const CONFIG = {
   },
 };
 
-// Simple formatting - NO currency symbols, just the number
 function formatAmount(amount) {
   return amount.toFixed(CONFIG.PRECISION);
 }
