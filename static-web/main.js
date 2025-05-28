@@ -13,34 +13,37 @@ const CONFIG = {
   },
 };
 
+// Receives a number, returns a string formatted to N decimal places
 function formatAmount(amount) {
+  if (typeof amount !== "number" || isNaN(amount)) {
+    console.warn("formatAmount received invalid amount:", amount);
+    return (0).toFixed(CONFIG.PRECISION); // Default to 0.00 if invalid
+  }
   return amount.toFixed(CONFIG.PRECISION);
 }
 
+// item: { name: string, price: number }
 function createReceiptTile(item, index) {
   const tile = document.createElement("div");
-  tile.className = "receipt-container";
+  tile.className = "receipt-container"; // Keep existing class for styling
 
-  // create checkbox for participation
   const checkboxContainer = document.createElement("div");
   checkboxContainer.className = "receipt-checkbox";
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
   checkbox.id = `item-${index}`;
+  checkbox.dataset.price = item.price; // Store price in dataset for easier access
   checkbox.addEventListener("change", calculateUserTotal);
   checkboxContainer.appendChild(checkbox);
 
-  // create the header of the tile
   const header = document.createElement("div");
   header.className = "receipt-header";
   header.textContent = item.name;
 
-  // create the price of the tile - NO currency symbol
-  const price = document.createElement("div");
-  price.className = "receipt-price";
-  price.textContent = formatAmount(item.total);
+  const priceDisplay = document.createElement("div");
+  priceDisplay.className = "receipt-price";
+  priceDisplay.textContent = formatAmount(item.price); // Display item's full price
 
-  // create people count input
   const peopleContainer = document.createElement("div");
   peopleContainer.className = "receipt-people";
   const peopleInput = document.createElement("input");
@@ -57,42 +60,43 @@ function createReceiptTile(item, index) {
   peopleContainer.appendChild(peopleInput);
   peopleContainer.appendChild(peopleLabel);
 
-  // create user's share for this item
-  const userShare = document.createElement("div");
-  userShare.className = "receipt-user-share";
-  userShare.id = `share-${index}`;
-  userShare.textContent = "0.00";
+  const userShareDisplay = document.createElement("div");
+  userShareDisplay.className = "receipt-user-share";
+  userShareDisplay.id = `share-${index}`;
+  userShareDisplay.textContent = "0.00"; // Initial share
 
-  // append the elements to the tile
   tile.appendChild(checkboxContainer);
   tile.appendChild(header);
-  tile.appendChild(price);
+  tile.appendChild(priceDisplay); // Display the item's price here
   tile.appendChild(peopleContainer);
-  tile.appendChild(userShare);
+  tile.appendChild(userShareDisplay);
 
   return tile;
 }
 
 function displayReceiptItems(items) {
-  // Remove existing static tiles
-  const existingTiles = document.querySelectorAll(".receipt-container");
-  existingTiles.forEach((tile) => tile.remove());
+  const sectionTitle = document.querySelector(".receipt-section h2");
+  if (!sectionTitle) {
+    console.error("Receipt section title not found. Cannot display items.");
+    return;
+  }
 
-  // Find the title
-  const title = document.querySelector("section h2");
-
-  // Create or get the scrollable container
   let container = document.getElementById("receipt-items-container");
   if (!container) {
     container = document.createElement("div");
     container.id = "receipt-items-container";
     container.className = "receipt-items-container";
-    title.insertAdjacentElement("afterend", container);
+    sectionTitle.insertAdjacentElement("afterend", container);
   } else {
     container.innerHTML = ""; // Clear existing items
   }
 
-  // Create and insert each tile into the scrollable container
+  if (!items || items.length === 0) {
+    container.innerHTML =
+      '<p class="no-items-message">No items to display. Share a receipt from the app!</p>';
+    return;
+  }
+
   items.forEach((item, index) => {
     const tile = createReceiptTile(item, index);
     container.appendChild(tile);
@@ -102,20 +106,31 @@ function displayReceiptItems(items) {
 function calculateUserTotal() {
   let userTotal = 0;
 
+  // receiptData should be an array of { name: string, price: number }
   receiptData.forEach((item, index) => {
     const checkbox = document.getElementById(`item-${index}`);
     const peopleInput = document.getElementById(`people-${index}`);
     const shareElement = document.getElementById(`share-${index}`);
 
     if (checkbox && peopleInput && shareElement) {
+      // item.price is the full price of this single item
+      const itemFullPrice = parseFloat(checkbox.dataset.price); // Get price from dataset
+      if (isNaN(itemFullPrice)) {
+        console.warn(
+          `Item ${index} has invalid price: ${checkbox.dataset.price}`
+        );
+        shareElement.textContent = "Error";
+        return; // Skip this item if price is invalid
+      }
+
       const peopleCount = parseInt(peopleInput.value) || 1;
-      const userShare = item.total / peopleCount;
+      const userShareForItem = itemFullPrice / peopleCount;
 
       if (checkbox.checked) {
-        shareElement.textContent = formatAmount(userShare);
+        shareElement.textContent = formatAmount(userShareForItem);
         shareElement.style.color = CONFIG.COLORS.SELECTED;
         shareElement.style.fontWeight = "bold";
-        userTotal += userShare;
+        userTotal += userShareForItem;
       } else {
         shareElement.textContent = "0.00";
         shareElement.style.color = CONFIG.COLORS.UNSELECTED;
@@ -123,129 +138,63 @@ function calculateUserTotal() {
       }
     }
   });
-
   updateTotalDisplay(userTotal);
 }
 
 function updateTotalDisplay(total) {
-  let totalDiv = document.getElementById("user-total");
+  const totalDiv = document.getElementById("user-total");
   if (totalDiv) {
     totalDiv.innerHTML = `
       <h3 style="color: ${
         CONFIG.COLORS.TEXT_DARK
-      }; margin: 0 0 10px 0;">💰 Your Total</h3>
+      }; margin: 0 0 10px 0; text-align: center;">💰 Your Total</h3>
       <div style="font-size: 28px; font-weight: bold; color: ${
         CONFIG.COLORS.SELECTED
-      };">
+      }; text-align: center;">
         ${formatAmount(total)}
       </div>
       <p style="color: ${
         CONFIG.COLORS.TEXT_DARK
-      }; margin: 10px 0 0 0; font-size: 14px;">
-        Based on items you selected and people sharing
+      }; margin: 10px 0 0 0; font-size: 14px; text-align: center;">
+        Select items and adjust sharers.
       </p>
     `;
   } else {
-    console.warn("Element with ID 'user-total' not found!");
+    console.error("Element with ID 'user-total' not found!"); // Changed from warn to error
   }
 }
 
 function addQuickActionListeners() {
-  // Select All button
   const selectAllBtn = document.getElementById("select-all-btn");
   if (selectAllBtn) {
     selectAllBtn.addEventListener("click", () => {
-      receiptData.forEach((_, index) => {
-        const checkbox = document.getElementById(`item-${index}`);
-        if (checkbox) {
-          checkbox.checked = true;
-        }
-      });
+      const allItemCheckboxes = document.querySelectorAll(
+        '.receipt-checkbox input[type="checkbox"]'
+      );
+      allItemCheckboxes.forEach((checkbox) => (checkbox.checked = true));
       calculateUserTotal();
     });
   } else {
     console.warn("Element with ID 'select-all-btn' not found!");
   }
 
-  // Clear All button
   const clearAllBtn = document.getElementById("clear-all-btn");
   if (clearAllBtn) {
     clearAllBtn.addEventListener("click", () => {
-      receiptData.forEach((_, index) => {
-        const checkbox = document.getElementById(`item-${index}`);
-        if (checkbox) {
-          checkbox.checked = false;
-        }
-      });
+      const allItemCheckboxes = document.querySelectorAll(
+        '.receipt-checkbox input[type="checkbox"]'
+      );
+      allItemCheckboxes.forEach((checkbox) => (checkbox.checked = false));
       calculateUserTotal();
     });
   } else {
     console.warn("Element with ID 'clear-all-btn' not found!");
   }
-
-  // Share Result button
-  const shareBtn = document.getElementById("share-btn");
-  if (shareBtn) {
-    shareBtn.addEventListener("click", shareResult);
-  } else {
-    console.warn("Element with ID 'share-btn' not found!");
-  }
+  // Removed shareBtn listener
 }
 
-async function shareResult() {
-  const selectedItems = [];
-  let userTotal = 0;
+// Removed shareResult function
 
-  receiptData.forEach((item, index) => {
-    const checkbox = document.getElementById(`item-${index}`);
-    const peopleInput = document.getElementById(`people-${index}`);
-
-    if (checkbox && checkbox.checked && peopleInput) {
-      const peopleCount = parseInt(peopleInput.value) || 1;
-      const userShare = item.total / peopleCount;
-      userTotal += userShare;
-
-      selectedItems.push({
-        name: item.name,
-        total: item.total,
-        people: peopleCount,
-        yourShare: userShare,
-      });
-    }
-  });
-
-  // Format sharing text without currency symbols
-  const shareText = `💰 My Bill Split Results\n\n${selectedItems
-    .map(
-      (item) =>
-        `${item.name}: ${formatAmount(item.yourShare)} (split ${
-          item.people
-        } ways)`
-    )
-    .join("\n")}\n\n🧾 My Total: ${formatAmount(
-    userTotal
-  )}\n\nSplit with Cash Splitter 📱`;
-
-  try {
-    if (navigator.share) {
-      await navigator.share({
-        title: "My Bill Split Results",
-        text: shareText,
-        url: window.location.href,
-      });
-    } else {
-      await navigator.clipboard.writeText(shareText);
-      showNotification("💾 Results copied to clipboard!");
-    }
-  } catch (error) {
-    console.error("Error sharing:", error);
-    prompt("Copy this text to share your results:", shareText);
-  }
-}
-
-/**
- * Show a temporary notification
- */
 function showNotification(message) {
   const notification = document.createElement("div");
   notification.style.cssText = `
@@ -260,11 +209,10 @@ function showNotification(message) {
     font-weight: 600;
     z-index: 2000;
     box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    animation: fadeInOut 2s ease-in-out;
+    animation: fadeInOut ${CONFIG.NOTIFICATION_DURATION / 1000}s ease-in-out;
   `;
   notification.textContent = message;
 
-  // Add CSS animation
   const style = document.createElement("style");
   style.textContent = `
     @keyframes fadeInOut {
@@ -273,62 +221,49 @@ function showNotification(message) {
     }
   `;
   document.head.appendChild(style);
-
   document.body.appendChild(notification);
 
   setTimeout(() => {
-    document.body.removeChild(notification);
-    document.head.removeChild(style);
-  }, 2000);
+    if (notification.parentNode === document.body) {
+      document.body.removeChild(notification);
+    }
+    if (style.parentNode === document.head) {
+      document.head.removeChild(style);
+    }
+  }, CONFIG.NOTIFICATION_DURATION);
 }
 
-// Helper function to normalize data - keep prices exactly as they are
-function normalizeReceiptItem(item) {
-  return {
-    name: item.name,
-    price: item.price, // Keep exactly as provided - no conversion!
-    quantity: item.quantity || 1,
-    get total() {
-      return this.price * this.quantity;
-    },
-  };
-}
+// Removed normalizeReceiptItem function as data comes pre-structured.
 
-// URL parsing - keep prices exactly as they come
+// URL parsing from hash
 function parseURLParameters() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const itemsParam = urlParams.get("items");
-
-  if (itemsParam) {
+  // Example: #data=[{"name":"Burger","price":10.99},{"name":"Fries","price":3.5}]
+  const hash = window.location.hash;
+  if (hash && hash.startsWith("#data=")) {
+    const encodedData = hash.substring(6); // Remove #data=
     try {
-      const parsedItems = JSON.parse(decodeURIComponent(itemsParam));
-
-      // Keep prices exactly as they come from URL - NO CONVERSION
-      return parsedItems.map((item) => ({
-        name: item.name,
-        price: item.price, // 230 stays 230, not 2.30
-        quantity: item.quantity || 1,
-        get total() {
-          return this.price * this.quantity;
-        },
-      }));
+      const decodedData = decodeURIComponent(encodedData);
+      const parsedItems = JSON.parse(decodedData);
+      // Ensure items have name and price, price is a number
+      return parsedItems
+        .map((item) => ({
+          name: String(item.name || "Unnamed Item"),
+          price: parseFloat(item.price || 0),
+        }))
+        .filter((item) => !isNaN(item.price)); // Filter out items where price became NaN
     } catch (error) {
-      console.error("Error parsing URL items:", error);
-      return null;
+      console.error("Error parsing URL items from hash:", error);
+      showNotification("Error: Could not load items from link.");
+      return []; // Return empty array on error
     }
   }
-  return null;
+  return []; // Return empty array if no valid data hash
 }
+
 let receiptData = [];
 
-// Initialize everything when page loads
 window.addEventListener("DOMContentLoaded", () => {
-  // Parse URL parameters and use them if available
-  const urlData = parseURLParameters();
-  if (urlData && urlData.length > 0) {
-    receiptData = urlData;
-  }
-
+  receiptData = parseURLParameters();
   displayReceiptItems(receiptData);
   calculateUserTotal();
   addQuickActionListeners();
