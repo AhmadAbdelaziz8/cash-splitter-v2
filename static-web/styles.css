@@ -1,5 +1,6 @@
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   margin: 0;
   padding: 0; /* Remove body padding, handle in container */
   background-color: #f0f4f8; /* Lighter, cleaner background */
@@ -67,7 +68,10 @@ body {
 .receipt-container {
   display: grid;
   /* Columns: Checkbox, Name, Price, People Input, User Share */
-  grid-template-columns: 40px minmax(100px, 2fr) minmax(60px, 1fr) 90px minmax(70px, 1fr);
+  grid-template-columns: 40px minmax(100px, 2fr) minmax(60px, 1fr) 90px minmax(
+      70px,
+      1fr
+    );
   gap: 10px;
   align-items: center;
   padding: 12px;
@@ -142,40 +146,45 @@ body {
   display: flex;
   flex-direction: row; /* Horizontal layout */
   align-items: center;
-  gap: 6px; /* Space between input and label */
-  justify-content: center;
+  gap: 6px; /* Space between input and label initially, now between buttons and span */
+  justify-content: center; /* Center the whole group */
 }
 
-.receipt-people input {
-  width: 45px; /* Compact */
-  height: 36px;
-  padding: 0 6px;
+/* New styles for people counter buttons and display */
+.people-btn {
+  background-color: #e5e7eb; /* gray-200 */
   border: 1px solid #d1d5db; /* gray-300 */
-  border-radius: 6px;
-  text-align: center;
-  font-size: 14px;
+  color: #374151; /* gray-700 */
+  font-size: 16px;
+  font-weight: bold;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%; /* Circular buttons */
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.people-btn:hover {
+  background-color: #d1d5db; /* gray-300 */
+  border-color: #9ca3af; /* gray-400 */
+}
+
+.people-btn:active {
+  background-color: #9ca3af; /* gray-400 */
+}
+
+.people-count-display {
+  font-size: 15px;
   font-weight: 500;
-  color: #1f2937;
-  background: #fff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.receipt-people input:hover {
-  border-color: #60a5fa; /* blue-400 */
-}
-
-.receipt-people input:focus {
-  outline: none;
-  border-color: #3b82f6; /* blue-500 */
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-}
-
-.receipt-people label {
-  font-size: 13px;
-  color: #4b5563; /* gray-600 */
-  font-weight: 400;
-  text-transform: none; /* No uppercase */
-  letter-spacing: 0;
+  color: #1f2937; /* Dark gray */
+  min-width: 25px; /* Ensure some space for the number */
+  text-align: center;
+  padding: 0 4px; /* Small horizontal padding */
 }
 
 .receipt-user-share {
@@ -288,7 +297,8 @@ body {
 /* Styles for .notification and @keyframes fadeInOut are usually injected by JS for temporary use */
 
 /* Responsive Adjustments */
-@media (min-width: 601px) { /* Styles for larger screens */
+@media (min-width: 601px) {
+  /* Styles for larger screens */
   body {
     padding: 20px; /* Add padding back for larger screens */
   }
@@ -318,19 +328,44 @@ body {
     gap: 6px 10px; /* row-gap column-gap */
   }
 
-  .receipt-checkbox { grid-area: check; align-self: flex-start; padding-top: 4px;}
-  .receipt-header   { grid-area: itemname; text-align: left; padding: 0; font-size: 14px;}
-  .receipt-price    { grid-area: itemprice; text-align: left; padding: 0; font-size: 14px; color: #4b5563; }
-  .receipt-people   { grid-area: itempeople; justify-content: flex-start; }
-  .receipt-user-share { grid-area: itemshare; text-align: left; padding: 0; font-size: 14px; }
-
-  .receipt-people input {
-    width: 40px;
-    height: 32px;
-    font-size: 13px;
+  .receipt-checkbox {
+    grid-area: check;
+    align-self: flex-start;
+    padding-top: 4px;
   }
-  .receipt-people label {
-    font-size: 12px;
+  .receipt-header {
+    grid-area: itemname;
+    text-align: left;
+    padding: 0;
+    font-size: 14px;
+  }
+  .receipt-price {
+    grid-area: itemprice;
+    text-align: left;
+    padding: 0;
+    font-size: 14px;
+    color: #4b5563;
+  }
+  .receipt-people {
+    grid-area: itempeople;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+  .receipt-user-share {
+    grid-area: itemshare;
+    text-align: left;
+    padding: 0;
+    font-size: 14px;
+  }
+
+  .people-btn {
+    width: 32px; /* Slightly larger tap target for mobile */
+    height: 32px;
+    font-size: 18px;
+  }
+
+  .people-count-display {
+    font-size: 16px;
   }
 
   .quick-actions {
@@ -342,20 +377,42 @@ body {
     padding: 14px 10px;
   }
 
-  .user-total-container h3 { font-size: 15px; }
-  .user-total-container div { font-size: 26px; }
-  .user-total-container p { font-size: 12px; }
+  .user-total-container h3 {
+    font-size: 15px;
+  }
+  .user-total-container div {
+    font-size: 26px;
+  }
+  .user-total-container p {
+    font-size: 12px;
+  }
 }
 
-@media (max-width: 360px) { /* Even smaller screens */
-  .app-header h1 { font-size: 20px; }
-  .receipt-section h2 { font-size: 17px; }
-  .receipt-header, .receipt-price, .receipt-user-share {
+@media (max-width: 360px) {
+  /* Even smaller screens */
+  .app-header h1 {
+    font-size: 20px;
+  }
+  .receipt-section h2 {
+    font-size: 17px;
+  }
+  .receipt-header,
+  .receipt-price,
+  .receipt-user-share {
     font-size: 13px;
   }
-  .receipt-people input { width: 38px; height: 30px; }
-  .receipt-people label { font-size: 11px; }
-  .action-btn { font-size: 14px; padding: 12px 8px;}
+  .people-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+  .people-count-display {
+    font-size: 14px;
+  }
+  .action-btn {
+    font-size: 14px;
+    padding: 12px 8px;
+  }
 }
 
 /* Removed .calculate-button and other specific button styles not in index.html anymore */
