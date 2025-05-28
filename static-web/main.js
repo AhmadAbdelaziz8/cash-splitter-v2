@@ -129,36 +129,25 @@ function calculateUserTotal() {
 
 function updateTotalDisplay(total) {
   let totalDiv = document.getElementById("user-total");
-  if (!totalDiv) {
-    totalDiv = document.createElement("div");
-    totalDiv.id = "user-total";
-    totalDiv.style.cssText = `
-      margin-top: 20px; 
-      padding: 20px; 
-      background: ${CONFIG.COLORS.BACKGROUND_GRADIENT}; 
-      border-radius: 12px; 
-      text-align: center;
-      border-left: 5px solid ${CONFIG.COLORS.BORDER};
+  if (totalDiv) {
+    totalDiv.innerHTML = `
+      <h3 style="color: ${
+        CONFIG.COLORS.TEXT_DARK
+      }; margin: 0 0 10px 0;">💰 Your Total</h3>
+      <div style="font-size: 28px; font-weight: bold; color: ${
+        CONFIG.COLORS.SELECTED
+      };">
+        ${formatAmount(total)}
+      </div>
+      <p style="color: ${
+        CONFIG.COLORS.TEXT_DARK
+      }; margin: 10px 0 0 0; font-size: 14px;">
+        Based on items you selected and people sharing
+      </p>
     `;
-    document.querySelector(".calculate-button").style.display = "none";
-    document.querySelector("section").appendChild(totalDiv);
+  } else {
+    console.warn("Element with ID 'user-total' not found!");
   }
-
-  totalDiv.innerHTML = `
-    <h3 style="color: ${
-      CONFIG.COLORS.TEXT_DARK
-    }; margin: 0 0 10px 0;">💰 Your Total</h3>
-    <div style="font-size: 28px; font-weight: bold; color: ${
-      CONFIG.COLORS.SELECTED
-    };">
-      ${formatAmount(total)}
-    </div>
-    <p style="color: ${
-      CONFIG.COLORS.TEXT_DARK
-    }; margin: 10px 0 0 0; font-size: 14px;">
-      Based on items you selected and people sharing
-    </p>
-  `;
 }
 
 function addQuickActionListeners() {
@@ -174,6 +163,8 @@ function addQuickActionListeners() {
       });
       calculateUserTotal();
     });
+  } else {
+    console.warn("Element with ID 'select-all-btn' not found!");
   }
 
   // Clear All button
@@ -188,12 +179,16 @@ function addQuickActionListeners() {
       });
       calculateUserTotal();
     });
+  } else {
+    console.warn("Element with ID 'clear-all-btn' not found!");
   }
 
   // Share Result button
   const shareBtn = document.getElementById("share-btn");
   if (shareBtn) {
     shareBtn.addEventListener("click", shareResult);
+  } else {
+    console.warn("Element with ID 'share-btn' not found!");
   }
 }
 
