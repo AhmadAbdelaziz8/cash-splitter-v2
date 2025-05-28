@@ -1,11 +1,4 @@
-const mockReceiptData = [
-  { name: "�� Burger", price: 45, quantity: 1 },
-  { name: "🍟 Fries", price: 20, quantity: 2 },
-  { name: "🥤 Soda", price: 15, quantity: 1 },
-  { name: "🍰 Ice Cream", price: 35, quantity: 1 },
-];
 
-// Configuration constants - NO CURRENCY SYMBOLS
 const CONFIG = {
   DEFAULT_PEOPLE_COUNT: 1,
   MIN_PEOPLE_COUNT: 1,
@@ -54,7 +47,6 @@ function createReceiptTile(item, index) {
   const peopleInput = document.createElement("input");
   peopleInput.type = "number";
   peopleInput.min = CONFIG.MIN_PEOPLE_COUNT.toString();
-
   peopleInput.value = CONFIG.DEFAULT_PEOPLE_COUNT.toString();
   peopleInput.id = `people-${index}`;
   peopleInput.addEventListener("input", calculateUserTotal);

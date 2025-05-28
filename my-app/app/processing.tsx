@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View, Text, Alert, Platform } from "react-native";
 import { router } from "expo-router";
-import { useReceipt, ReceiptItem } from "@/contexts/ReceiptContext";
+import { useReceipt } from "@/contexts/ReceiptContext";
 import { parseReceiptImage, ParseResult } from "@/config/geminiConfig";
 
 export default function ProcessingScreen() {
@@ -36,15 +36,14 @@ export default function ProcessingScreen() {
         const result: ParseResult = await parseReceiptImage(imageBase64);
 
         if (result.success && result.data?.items) {
-          const formattedItems: ReceiptItem[] = result.data.items.map(
-            (item, index) => ({
-              id: `${index + 1}`,
-              name: item.itemName,
-              price: item.itemPrice,
-              selected: false,
-              assignedTo: [],
-            })
-          );
+          const formattedItems = result.data.items.map((item, index) => {
+            const price = parseFloat(item.itemPrice as any);
+            return {
+              id: `llm-item-${Date.now()}-${index}`,
+              name: item.itemName || "Unnamed Item",
+              price: isNaN(price) ? 0 : price,
+            };
+          });
 
           setItems(formattedItems);
 
@@ -53,19 +52,18 @@ export default function ProcessingScreen() {
             console.log("🎉 Successfully processed receipt with Gemini AI");
           }
 
-          setTimeout(() => router.push("/results"), 500);
+          setTimeout(() => router.push("/EditItemsScreen"), 500);
         } else {
           // Handle the case where we got mock data due to API issues
           if (result.data?.items) {
-            const formattedItems: ReceiptItem[] = result.data.items.map(
-              (item, index) => ({
-                id: `${index + 1}`,
-                name: item.itemName,
-                price: item.itemPrice,
-                selected: false,
-                assignedTo: [],
-              })
-            );
+            const formattedItems = result.data.items.map((item, index) => {
+              const price = parseFloat(item.itemPrice as any);
+              return {
+                id: `mock-item-${Date.now()}-${index}`,
+                name: item.itemName || "Unnamed Item",
+                price: isNaN(price) ? 0 : price,
+              };
+            });
 
             setItems(formattedItems);
 
@@ -80,7 +78,7 @@ export default function ProcessingScreen() {
                 }. Showing example data instead.`;
 
             Alert.alert(alertTitle, alertMessage, [{ text: "OK" }]);
-            setTimeout(() => router.push("/results"), 1000);
+            setTimeout(() => router.push("/EditItemsScreen"), 1000);
           } else {
             throw new Error("No data available");
           }
@@ -92,7 +90,8 @@ export default function ProcessingScreen() {
           "There was an issue analyzing your receipt. Please try again.",
           [{ text: "OK" }]
         );
-        setTimeout(() => router.push("/results"), 1000);
+        setItems([]);
+        setTimeout(() => router.push("/EditItemsScreen"), 1000);
       }
     };
 
