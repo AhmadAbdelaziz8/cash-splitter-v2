@@ -46,19 +46,44 @@ function createReceiptTile(item, index) {
 
   const peopleContainer = document.createElement("div");
   peopleContainer.className = "receipt-people";
-  const peopleInput = document.createElement("input");
-  peopleInput.type = "number";
-  peopleInput.min = CONFIG.MIN_PEOPLE_COUNT.toString();
-  peopleInput.value = CONFIG.DEFAULT_PEOPLE_COUNT.toString();
-  peopleInput.id = `people-${index}`;
-  peopleInput.addEventListener("input", calculateUserTotal);
 
-  const peopleLabel = document.createElement("label");
-  peopleLabel.textContent = "people";
-  peopleLabel.style.fontSize = "12px";
+  const minusBtn = document.createElement("button");
+  minusBtn.type = "button";
+  minusBtn.className = "people-btn minus-btn";
+  minusBtn.textContent = "-";
+  minusBtn.dataset.index = index;
 
-  peopleContainer.appendChild(peopleInput);
-  peopleContainer.appendChild(peopleLabel);
+  const peopleCountDisplay = document.createElement("span");
+  peopleCountDisplay.className = "people-count-display";
+  peopleCountDisplay.id = `people-count-${index}`;
+  peopleCountDisplay.textContent = CONFIG.DEFAULT_PEOPLE_COUNT.toString();
+
+  const plusBtn = document.createElement("button");
+  plusBtn.type = "button";
+  plusBtn.className = "people-btn plus-btn";
+  plusBtn.textContent = "+";
+  plusBtn.dataset.index = index;
+
+  minusBtn.addEventListener("click", () => {
+    let currentCount = parseInt(peopleCountDisplay.textContent || "1");
+    if (currentCount > CONFIG.MIN_PEOPLE_COUNT) {
+      currentCount--;
+      peopleCountDisplay.textContent = currentCount.toString();
+      calculateUserTotal();
+    }
+  });
+
+  plusBtn.addEventListener("click", () => {
+    let currentCount = parseInt(peopleCountDisplay.textContent || "1");
+    // Optionally add a MAX_PEOPLE_COUNT if desired
+    currentCount++;
+    peopleCountDisplay.textContent = currentCount.toString();
+    calculateUserTotal();
+  });
+
+  peopleContainer.appendChild(minusBtn);
+  peopleContainer.appendChild(peopleCountDisplay);
+  peopleContainer.appendChild(plusBtn);
 
   const userShareDisplay = document.createElement("div");
   userShareDisplay.className = "receipt-user-share";
@@ -109,10 +134,10 @@ function calculateUserTotal() {
   // receiptData should be an array of { name: string, price: number }
   receiptData.forEach((item, index) => {
     const checkbox = document.getElementById(`item-${index}`);
-    const peopleInput = document.getElementById(`people-${index}`);
+    const peopleCountDisplay = document.getElementById(`people-count-${index}`);
     const shareElement = document.getElementById(`share-${index}`);
 
-    if (checkbox && peopleInput && shareElement) {
+    if (checkbox && peopleCountDisplay && shareElement) {
       // item.price is the full price of this single item
       const itemFullPrice = parseFloat(checkbox.dataset.price); // Get price from dataset
       if (isNaN(itemFullPrice)) {
@@ -123,7 +148,8 @@ function calculateUserTotal() {
         return; // Skip this item if price is invalid
       }
 
-      const peopleCount = parseInt(peopleInput.value) || 1;
+      // Get peopleCount from the span's textContent
+      const peopleCount = parseInt(peopleCountDisplay.textContent || "1") || 1;
       const userShareForItem = itemFullPrice / peopleCount;
 
       if (checkbox.checked) {
