@@ -2,47 +2,23 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
     Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   margin: 0;
-  padding: 0; /* Remove body padding, handle in container */
-  background-color: #f0f4f8; /* Lighter, cleaner background */
-  color: #333;
-  line-height: 1.6;
-  display: flex; /* For centering container on taller screens */
-  flex-direction: column;
-  min-height: 100vh; /* Ensure body takes full viewport height */
+  padding: 20px;
+  background-color: #f5f5f5;
 }
 
 .container {
-  width: 100%; /* Full width on mobile */
-  max-width: 600px; /* Max width for larger screens */
-  margin: 0 auto; /* Center for larger screens */
+  max-width: 600px;
+  margin: 0 auto;
   background: white;
-  padding: 16px; /* Base padding */
-  border-radius: 0; /* No border radius on mobile, full width */
-  box-shadow: none; /* No shadow on mobile for edge-to-edge feel */
-  flex-grow: 1; /* Allow container to grow if content is short */
-  display: flex;
-  flex-direction: column;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.app-header {
-  padding: 16px 0;
+h1 {
+  color: #0ea5e9;
   text-align: center;
-  border-bottom: 1px solid #e5e7eb;
-  margin-bottom: 16px;
-}
-
-.app-header h1 {
-  color: #1f2937; /* Darker, more modern text */
-  font-size: 24px; /* Responsive base */
-  font-weight: 600;
-  margin: 0;
-}
-
-.receipt-section h2 {
-  font-size: 20px;
-  color: #1f2937;
-  margin-bottom: 12px;
-  text-align: center;
+  margin-bottom: 20px;
 }
 
 #debug {
@@ -74,36 +50,44 @@ body {
     );
   gap: 10px;
   align-items: center;
-  padding: 12px;
-  margin-bottom: 10px;
-  background: #fff; /* Simpler background */
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  min-height: auto; /* Let content define height */
+  padding: 16px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  min-height: 60px; /* Compact height */
 }
 
 .receipt-container:hover {
-  border-color: #3b82f6; /* Tailwind blue-500 */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.06);
+  border-color: #0ea5e9;
+}
+
+/* Modern Checkbox Styling */
+.receipt-checkbox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .receipt-checkbox input[type="checkbox"] {
-  width: 22px; /* Slightly larger tap target */
-  height: 22px;
+  width: 20px;
+  height: 20px;
   cursor: pointer;
   appearance: none;
-  border: 2px solid #d1d5db; /* gray-300 */
+  border: 2px solid #d1d5db;
   border-radius: 6px;
   background: white;
   transition: all 0.2s ease;
   position: relative;
-  vertical-align: middle; /* Align with text if needed */
 }
 
 .receipt-checkbox input[type="checkbox"]:checked {
-  background: #3b82f6; /* blue-500 */
-  border-color: #3b82f6;
+  background: #0ea5e9;
+  border-color: #0ea5e9;
 }
 
 .receipt-checkbox input[type="checkbox"]:checked::after {
@@ -113,38 +97,38 @@ body {
   left: 50%;
   transform: translate(-50%, -50%);
   color: white;
-  font-size: 14px; /* Adjusted for new checkbox size */
+  font-size: 12px;
   font-weight: bold;
 }
 
+/* Item Header - More Compact */
 .receipt-header {
-  font-weight: 500; /* Medium weight */
-  font-size: 15px;
-  color: #1f2937; /* Dark gray */
-  padding: 6px 0; /* Remove horizontal padding, let grid handle gap */
-  text-align: left;
-  /* Remove background/border for cleaner look if desired */
-  background: none;
-  border: none;
-  border-radius: 0;
-  overflow-wrap: break-word; /* Wrap long item names */
-  word-break: break-word;
+  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  color: #1e40af;
+  padding: 8px 12px; /* Reduced padding */
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px; /* Slightly smaller */
+  text-align: center;
+  border: 1px solid #93c5fd;
 }
 
+/* Price Styling - More Compact */
 .receipt-price {
-  font-weight: 500;
-  font-size: 15px;
-  color: #1f2937;
-  text-align: right;
-  padding: 6px 0;
-  background: none;
-  border: none;
-  border-radius: 0;
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #166534;
+  padding: 8px 12px; /* Reduced padding */
+  border-radius: 8px;
+  font-weight: bold;
+  text-align: center;
+  font-size: 14px;
+  border: 1px solid #86efac;
 }
 
+/* Modern People Input Container */
 .receipt-people {
   display: flex;
-  flex-direction: row; /* Horizontal layout */
+  flex-direction: column;
   align-items: center;
   gap: 6px; /* Space between input and label initially, now between buttons and span */
   justify-content: center; /* Center the whole group */
@@ -187,96 +171,149 @@ body {
   padding: 0 4px; /* Small horizontal padding */
 }
 
+/* User Share Display - More Compact */
 .receipt-user-share {
-  text-align: right;
-  font-weight: 600; /* Bold for emphasis */
-  font-size: 15px;
-  color: #1f2937;
-  padding: 6px 0;
-  background: none;
-  border: none;
-  border-radius: 0;
-}
-
-.receipt-items-container {
-  flex-grow: 1; /* Allow this to take available space */
-  overflow-y: auto;
-  padding-right: 6px; /* For scrollbar */
-  margin-bottom: 16px;
-  border-top: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
-  padding-top: 10px;
-  padding-bottom: 10px;
-}
-
-.no-items-message {
   text-align: center;
-  color: #6b7280; /* gray-500 */
-  padding: 20px;
-  font-size: 15px;
+  font-weight: bold;
+  font-size: 14px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
 }
 
-/* Custom Scrollbar */
+/* Scrollable Container - More Compact */
+.receipt-items-container {
+  max-height: 320px; /* Reduced height for more compact view */
+  overflow-y: auto;
+  padding-right: 8px;
+  margin-bottom: 16px;
+}
+
+/* Custom Scrollbar - More Stylish */
 .receipt-items-container::-webkit-scrollbar {
   width: 6px;
 }
+
 .receipt-items-container::-webkit-scrollbar-track {
-  background: #f3f4f6; /* gray-100 */
+  background: #f1f5f9;
   border-radius: 6px;
-}
-.receipt-items-container::-webkit-scrollbar-thumb {
-  background: #9ca3af; /* gray-400 */
-  border-radius: 6px;
-}
-.receipt-items-container::-webkit-scrollbar-thumb:hover {
-  background: #6b7280; /* gray-500 */
 }
 
+.receipt-items-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  border-radius: 6px;
+}
+
+.receipt-items-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+}
+
+/* Mobile Responsive - Keep it compact */
+@media (max-width: 600px) {
+  .receipt-container {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .receipt-header,
+  .receipt-price {
+    text-align: center;
+    padding: 6px 10px;
+  }
+
+  .receipt-people input {
+    width: 50px;
+    height: 32px;
+  }
+}
+
+/* Add this to your styles.css for the button */
+.calculate-button {
+  width: 100%;
+  padding: 15px;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 25px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(14, 165, 233, 0.3);
+}
+
+.calculate-button:hover {
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(14, 165, 233, 0.4);
+}
+
+.calculate-button:active {
+  transform: translateY(0);
+}
+
+/* Add some spacing between multiple receipt containers */
+.receipt-container + .receipt-container {
+  margin-top: 10px;
+}
+
+/* Header Styling */
+.app-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  margin: -10px 0 0 0;
+  font-style: italic;
+}
+
+/* Quick Actions Styling */
 .quick-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 16px;
-  padding-bottom: 16px;
-  /* border-bottom: 1px solid #e5e7eb; */ /* Optional: separator before total */
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .action-btn {
-  flex-grow: 1; /* Buttons share space */
-  padding: 12px 10px;
-  background-color: #f3f4f6; /* gray-100 */
-  color: #1f2937; /* gray-800 */
-  border: 1px solid #d1d5db; /* gray-300 */
+  padding: 8px 16px;
+  border: 2px solid #e5e7eb;
   border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
+  background: linear-gradient(135deg, #ffffff, #f9fafb);
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-  text-align: center;
+  transition: all 0.2s ease;
+  flex: 1;
+  min-width: 120px;
+  max-width: 150px;
 }
 
 .action-btn:hover {
-  background-color: #e5e7eb; /* gray-200 */
-  border-color: #9ca3af; /* gray-400 */
+  border-color: #0ea5e9;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.15);
 }
 
 .action-btn:active {
-  background-color: #d1d5db; /* gray-300 */
+  transform: translateY(0);
 }
 
-/* User Total Display Area */
-.user-total-container {
-  padding: 16px;
-  background-color: #f9fafb; /* gray-50, slight contrast */
-  border-radius: 8px;
-  margin-top: auto; /* Push to bottom if container has space */
-}
-
-.user-total-container h3 {
-  font-size: 16px; /* Smaller heading */
-  color: #374151; /* gray-700 */
-  margin: 0 0 8px 0;
+/* Loading Indicator */
+#loading-indicator {
   text-align: center;
-  font-weight: 500;
+  padding: 40px;
+  color: #6b7280;
 }
 
 .user-total-container div {
@@ -309,11 +346,12 @@ body {
 }
 
 @media (max-width: 600px) {
-  .app-header h1 {
-    font-size: 22px; /* Slightly smaller for mobile */
+  .quick-actions {
+    flex-direction: column;
   }
-  .receipt-section h2 {
-    font-size: 18px;
+
+  .action-btn {
+    max-width: none;
   }
 
   .receipt-container {
