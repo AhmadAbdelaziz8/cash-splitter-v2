@@ -9,6 +9,7 @@ const mockReceiptData = [
 const CONFIG = {
   DEFAULT_PEOPLE_COUNT: 1,
   MIN_PEOPLE_COUNT: 1,
+
   PRECISION: 2, // For decimal places only
   NOTIFICATION_DURATION: 2000,
   COLORS: {
@@ -53,7 +54,7 @@ function createReceiptTile(item, index) {
   const peopleInput = document.createElement("input");
   peopleInput.type = "number";
   peopleInput.min = CONFIG.MIN_PEOPLE_COUNT.toString();
-  peopleInput.max = CONFIG.MAX_PEOPLE_COUNT.toString();
+
   peopleInput.value = CONFIG.DEFAULT_PEOPLE_COUNT.toString();
   peopleInput.id = `people-${index}`;
   peopleInput.addEventListener("input", calculateUserTotal);
