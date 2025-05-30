@@ -8,6 +8,7 @@ export enum ErrorType {
   NETWORK = "network",
   VALIDATION = "validation",
   SHARING = "sharing",
+  PARSING = "parsing",
   UNKNOWN = "unknown",
 }
 

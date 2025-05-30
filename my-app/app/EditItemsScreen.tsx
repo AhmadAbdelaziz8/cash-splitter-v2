@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -20,8 +20,11 @@ const EditItemsScreen: React.FC = () => {
     deleteItem,
     toggleUserItemSelection,
     userSelectedItemIds,
-    userSubtotal,
     generateShareableLink,
+    setProcessedReceiptData,
+    receiptTotal,
+    receiptTax,
+    receiptService,
   } = useReceipt();
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -118,6 +121,10 @@ const EditItemsScreen: React.FC = () => {
     </View>
   );
 
+  const currentItemsSubtotal = useMemo(() => {
+    return items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  }, [items]);
+
   return (
     <View className="flex-1 p-4 bg-slate-50">
       <Text className="text-2xl font-bold mb-4 text-slate-700">
@@ -125,6 +132,7 @@ const EditItemsScreen: React.FC = () => {
       </Text>
 
       <FlatList
+        className="flex-1"
         data={items}
         renderItem={renderItemRow}
         keyExtractor={(item) => item.id}
@@ -133,30 +141,65 @@ const EditItemsScreen: React.FC = () => {
             No items yet. Add some!
           </Text>
         }
+        ListFooterComponent={() => (
+          <View className="mt-6 pt-4 border-t border-slate-300">
+            <View className="flex-row justify-between items-center mb-1">
+              <Text className="text-base text-slate-600">Items Subtotal:</Text>
+              <Text className="text-base font-semibold text-slate-700">
+                ${currentItemsSubtotal.toFixed(2)}
+              </Text>
+            </View>
+            {receiptTax !== null && receiptTax > 0 && (
+              <View className="flex-row justify-between items-center mb-1">
+                <Text className="text-base text-slate-600">
+                  Tax (from receipt):
+                </Text>
+                <Text className="text-base font-semibold text-slate-700">
+                  ${receiptTax.toFixed(2)}
+                </Text>
+              </View>
+            )}
+            {receiptService !== null && receiptService > 0 && (
+              <View className="flex-row justify-between items-center mb-1">
+                <Text className="text-base text-slate-600">
+                  Service (from receipt):
+                </Text>
+                <Text className="text-base font-semibold text-slate-700">
+                  ${receiptService.toFixed(2)}
+                </Text>
+              </View>
+            )}
+            <View className="flex-row justify-between items-center mt-2 pt-2 border-t border-slate-200">
+              <Text className="text-lg font-bold text-slate-800">
+                Receipt Grand Total:
+              </Text>
+              <Text className="text-lg font-bold text-slate-800">
+                ${receiptTotal.toFixed(2)}
+              </Text>
+            </View>
+          </View>
+        )}
       />
 
-      <TouchableOpacity
-        className="bg-blue-500 p-3 rounded-lg items-center mt-4"
-        onPress={openModalToAdd}
-      >
-        <Text className="text-white text-base font-bold">Add New Item</Text>
-      </TouchableOpacity>
+      {/* Button Container */}
+      <View className="flex-row justify-between items-center mt-4">
+        <TouchableOpacity
+          className="bg-blue-500 p-3 rounded-lg items-center flex-1 mr-2"
+          onPress={openModalToAdd}
+        >
+          <Text className="text-white text-base font-bold">Add New Item</Text>
+        </TouchableOpacity>
 
-      <View className="mt-4 py-2 border-t border-slate-300">
-        <Text className="text-lg font-bold text-right text-green-600">
-          Your Subtotal: ${userSubtotal.toFixed(2)}
-        </Text>
+        <TouchableOpacity
+          className="bg-green-500 p-3 rounded-lg items-center flex-1 ml-2 disabled:opacity-50"
+          onPress={handleFinalize}
+          disabled={items.length === 0 || userSelectedItemIds.length === 0} // Also disable if no items are selected for the subtotal
+        >
+          <Text className="text-white text-base font-bold">
+            Finalize & Get Link
+          </Text>
+        </TouchableOpacity>
       </View>
-
-      <TouchableOpacity
-        className="bg-blue-500 p-3 rounded-lg items-center mt-4 disabled:opacity-50"
-        onPress={handleFinalize}
-        disabled={items.length === 0}
-      >
-        <Text className="text-white text-base font-bold">
-          Finalize & Get Link
-        </Text>
-      </TouchableOpacity>
 
       <Modal
         animationType="slide"

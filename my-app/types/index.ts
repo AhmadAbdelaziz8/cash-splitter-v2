@@ -1,16 +1,28 @@
 // Global type definitions for the Cash Splitter app
 
-export interface ReceiptItem {
+// This is what the ReceiptContext uses internally after processing
+export interface ContextReceiptItem {
   id: string;
-  name: string;
-  price: number;
+  name: string; // Mapped from itemName
+  price: number; // Mapped from itemPrice
+  quantity: number; // Added
   selected: boolean;
   assignedTo: string[];
 }
 
+// This is what the LLM service is expected to parse and return
+// It matches ParsedReceiptDataByLLM in receiptService.ts and GeminiParsedReceiptData in ReceiptContext
+export interface LLMReceiptItem {
+  itemName: string;
+  itemPrice: number;
+  quantity?: number;
+}
+
 export interface ParsedReceiptData {
-  items: ReceiptItem[];
+  items: LLMReceiptItem[]; // Uses the LLM item structure
   total: number;
+  tax?: number; // Added optional tax
+  service?: number; // Added optional service
 }
 
 export interface ParseResult {

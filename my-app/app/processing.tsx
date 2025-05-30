@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, View, Text, Alert, Platform } from "react-native";
 import { router } from "expo-router";
 import { useReceipt } from "@/contexts/ReceiptContext";
-import { parseReceiptImage, ParseResult } from "@/config/geminiConfig";
+import { receiptService } from "@/services/receiptService";
+import { ParseResult } from "@/types";
 
 export default function ProcessingScreen() {
   const [processingStep, setProcessingStep] = useState(0);
-  const { imageBase64, setItems } = useReceipt();
+  const { imageBase64, setProcessedReceiptData, setItems } = useReceipt();
 
   const steps = [
     "Analyzing receipt...",
@@ -33,55 +34,32 @@ export default function ProcessingScreen() {
 
     const processImage = async () => {
       try {
-        const result: ParseResult = await parseReceiptImage(imageBase64);
+        const result: ParseResult = await receiptService.parseReceiptImage(imageBase64);
 
-        if (result.success && result.data?.items) {
-          const formattedItems = result.data.items.map((item, index) => {
-            const price = parseFloat(item.itemPrice as any);
-            return {
-              id: `llm-item-${Date.now()}-${index}`,
-              name: item.itemName || "Unnamed Item",
-              price: isNaN(price) ? 0 : price,
-            };
-          });
+        if (result.success && result.data) {
+          setProcessedReceiptData(result.data);
 
-          setItems(formattedItems);
-
-          // Show success message if real API was used
-          if (result.success) {
-            console.log("🎉 Successfully processed receipt with Gemini AI");
+          if (!result.error || !result.error.toLowerCase().includes("mock")) {
+            console.log("🎉 Successfully processed receipt with API");
           }
 
           setTimeout(() => router.push("/EditItemsScreen"), 500);
         } else {
-          // Handle the case where we got mock data due to API issues
-          if (result.data?.items) {
-            const formattedItems = result.data.items.map((item, index) => {
-              const price = parseFloat(item.itemPrice as any);
-              return {
-                id: `mock-item-${Date.now()}-${index}`,
-                name: item.itemName || "Unnamed Item",
-                price: isNaN(price) ? 0 : price,
-              };
-            });
+          const alertTitle = result.error?.includes("API Key")
+            ? "API Key Required"
+            : "Processing Issue";
+          const alertMessage = result.error?.includes("API Key")
+            ? "Add your Google API key to analyze real receipts. Showing example data for now."
+            : `${result.error || "Unknown error"}. Showing example data instead.`;
 
-            setItems(formattedItems);
+          Alert.alert(alertTitle, alertMessage, [{ text: "OK" }]);
 
-            // Show appropriate message based on the error
-            const alertTitle = result.error?.includes("API Key")
-              ? "API Key Required"
-              : "Processing Issue";
-            const alertMessage = result.error?.includes("API Key")
-              ? "Add your Google API key to analyze real receipts. Showing example data for now."
-              : `${
-                  result.error || "Unknown error"
-                }. Showing example data instead.`;
-
-            Alert.alert(alertTitle, alertMessage, [{ text: "OK" }]);
-            setTimeout(() => router.push("/EditItemsScreen"), 1000);
+          if (result.data) {
+            setProcessedReceiptData(result.data);
           } else {
-            throw new Error("No data available");
+            setItems([]);
           }
+          setTimeout(() => router.push("/EditItemsScreen"), 1000);
         }
       } catch (error) {
         console.error("Processing error:", error);
@@ -97,7 +75,7 @@ export default function ProcessingScreen() {
 
     setTimeout(processImage, 1000);
     return () => clearInterval(progressTimer);
-  }, [imageBase64, setItems]);
+  }, [imageBase64, setProcessedReceiptData, setItems]);
 
   const progressPercentage = ((processingStep + 1) / steps.length) * 100;
 
