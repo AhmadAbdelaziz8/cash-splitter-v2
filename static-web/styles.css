@@ -24,17 +24,14 @@ h1 {
 }
 
 
-
 #content {
   padding: 20px;
   text-align: center;
   color: #666;
 }
 
-/* Updated Receipt Container Styling - More Compact & Stylish */
 .receipt-container {
   display: grid;
-  /* Columns: Checkbox, Name, Price, People Input, User Share */
   grid-template-columns: 40px minmax(100px, 2fr) minmax(60px, 1fr) 90px minmax(
       70px,
       1fr
@@ -48,7 +45,6 @@ h1 {
   border: 1px solid #e5e7eb;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.06);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  min-height: auto; /* Let content define height */
   cursor: pointer; /* Indicate the whole tile is clickable */
 }
 
@@ -93,7 +89,6 @@ h1 {
   font-weight: bold;
 }
 
-/* Item Header - More Compact */
 .receipt-header {
   background: none;
   color: #1f2937;
@@ -107,11 +102,10 @@ h1 {
   word-break: break-word;
 }
 
-/* Price Styling - More Compact */
 .receipt-price {
   background: none;
   color: #1f2937;
-  padding: 4px 0; /* Reduce padding */
+  padding: 4px 0; 
   border-radius: 0;
   font-weight: 500;
   text-align: right;
@@ -119,7 +113,6 @@ h1 {
   border: none;
 }
 
-/* Modern People Input Container */
 .receipt-people {
   display: flex;
   flex-direction: column;
