@@ -25,15 +25,20 @@ function formatAmount(amount) {
 // item: { name: string, price: number }
 function createReceiptTile(item, index) {
   const tile = document.createElement("div");
-  tile.className = "receipt-container"; // Keep existing class for styling
+  tile.className = "receipt-container";
+  tile.dataset.index = index; // Add index to tile for easier checkbox targeting
 
   const checkboxContainer = document.createElement("div");
   checkboxContainer.className = "receipt-checkbox";
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
   checkbox.id = `item-${index}`;
-  checkbox.dataset.price = item.price; // Store price in dataset for easier access
+  checkbox.dataset.price = item.price;
   checkbox.addEventListener("change", calculateUserTotal);
+  // Prevent tile click from also firing if checkbox is directly clicked
+  checkbox.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
   checkboxContainer.appendChild(checkbox);
 
   const header = document.createElement("div");
@@ -42,7 +47,7 @@ function createReceiptTile(item, index) {
 
   const priceDisplay = document.createElement("div");
   priceDisplay.className = "receipt-price";
-  priceDisplay.textContent = formatAmount(item.price); // Display item's full price
+  priceDisplay.textContent = formatAmount(item.price);
 
   const peopleContainer = document.createElement("div");
   peopleContainer.className = "receipt-people";
@@ -52,6 +57,18 @@ function createReceiptTile(item, index) {
   minusBtn.className = "people-btn minus-btn";
   minusBtn.textContent = "-";
   minusBtn.dataset.index = index;
+  minusBtn.addEventListener("click", (event) => {
+    event.stopPropagation(); // Prevent tile click
+    let currentCount = parseInt(
+      document.getElementById(`people-count-${index}`).textContent || "1"
+    );
+    if (currentCount > CONFIG.MIN_PEOPLE_COUNT) {
+      currentCount--;
+      document.getElementById(`people-count-${index}`).textContent =
+        currentCount.toString();
+      calculateUserTotal();
+    }
+  });
 
   const peopleCountDisplay = document.createElement("span");
   peopleCountDisplay.className = "people-count-display";
@@ -63,21 +80,14 @@ function createReceiptTile(item, index) {
   plusBtn.className = "people-btn plus-btn";
   plusBtn.textContent = "+";
   plusBtn.dataset.index = index;
-
-  minusBtn.addEventListener("click", () => {
-    let currentCount = parseInt(peopleCountDisplay.textContent || "1");
-    if (currentCount > CONFIG.MIN_PEOPLE_COUNT) {
-      currentCount--;
-      peopleCountDisplay.textContent = currentCount.toString();
-      calculateUserTotal();
-    }
-  });
-
-  plusBtn.addEventListener("click", () => {
-    let currentCount = parseInt(peopleCountDisplay.textContent || "1");
-    // Optionally add a MAX_PEOPLE_COUNT if desired
+  plusBtn.addEventListener("click", (event) => {
+    event.stopPropagation(); // Prevent tile click
+    let currentCount = parseInt(
+      document.getElementById(`people-count-${index}`).textContent || "1"
+    );
     currentCount++;
-    peopleCountDisplay.textContent = currentCount.toString();
+    document.getElementById(`people-count-${index}`).textContent =
+      currentCount.toString();
     calculateUserTotal();
   });
 
@@ -88,13 +98,26 @@ function createReceiptTile(item, index) {
   const userShareDisplay = document.createElement("div");
   userShareDisplay.className = "receipt-user-share";
   userShareDisplay.id = `share-${index}`;
-  userShareDisplay.textContent = "0.00"; // Initial share
+  userShareDisplay.textContent = "0.00";
 
   tile.appendChild(checkboxContainer);
   tile.appendChild(header);
-  tile.appendChild(priceDisplay); // Display the item's price here
+  tile.appendChild(priceDisplay);
   tile.appendChild(peopleContainer);
   tile.appendChild(userShareDisplay);
+
+  // Make the whole tile clickable to toggle the checkbox
+  tile.addEventListener("click", function () {
+    // 'this' refers to the tile element
+    const chk = this.querySelector('.receipt-checkbox input[type="checkbox"]');
+    if (chk) {
+      chk.checked = !chk.checked;
+      // Manually trigger the change event for the checkbox if other listeners depend on it,
+      // or directly call calculateUserTotal.
+      // For simplicity and since our main listener is already on 'change', let's directly call calculateUserTotal.
+      calculateUserTotal();
+    }
+  });
 
   return tile;
 }

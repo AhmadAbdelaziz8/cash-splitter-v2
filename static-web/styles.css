@@ -8,7 +8,8 @@ body {
 }
 
 .container {
-  max-width: 600px;
+  max-width: calc(100vw - 40px);
+  height: calc(100vh - 40px);
   margin: 0 auto;
   background: white;
   padding: 20px;
@@ -22,18 +23,7 @@ h1 {
   margin-bottom: 20px;
 }
 
-#debug {
-  background: #f0f0f0;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  font-size: 12px;
-  border-left: 3px solid #0ea5e9;
-}
 
-#debug div {
-  margin: 5px 0;
-}
 
 #content {
   padding: 20px;
@@ -55,10 +45,11 @@ h1 {
   margin-bottom: 12px;
   background: linear-gradient(135deg, #ffffff, #f8fafc);
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.06);
-  transition: all 0.2s ease;
-  min-height: 60px; /* Compact height */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: auto; /* Let content define height */
+  cursor: pointer; /* Indicate the whole tile is clickable */
 }
 
 .receipt-container:hover {
@@ -104,26 +95,28 @@ h1 {
 
 /* Item Header - More Compact */
 .receipt-header {
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-  color: #1e40af;
-  padding: 8px 12px; /* Reduced padding */
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 14px; /* Slightly smaller */
-  text-align: center;
-  border: 1px solid #93c5fd;
+  background: none;
+  color: #1f2937;
+  padding: 4px 0; /* Reduce padding */
+  border-radius: 0;
+  font-weight: 500;
+  font-size: 14px; /* Slightly reduce base size */
+  text-align: left;
+  border: none;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Price Styling - More Compact */
 .receipt-price {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-  color: #166534;
-  padding: 8px 12px; /* Reduced padding */
-  border-radius: 8px;
-  font-weight: bold;
-  text-align: center;
+  background: none;
+  color: #1f2937;
+  padding: 4px 0; /* Reduce padding */
+  border-radius: 0;
+  font-weight: 500;
+  text-align: right;
   font-size: 14px;
-  border: 1px solid #86efac;
+  border: none;
 }
 
 /* Modern People Input Container */
@@ -174,13 +167,14 @@ h1 {
 
 /* User Share Display - More Compact */
 .receipt-user-share {
-  text-align: center;
-  font-weight: bold;
-  font-size: 14px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  text-align: right;
+  font-weight: 600;
+  font-size: 14px; /* Slightly reduce base size */
+  color: #1f2937;
+  padding: 4px 0; /* Reduce padding */
+  border-radius: 0;
+  background: none;
+  border: none;
   transition: all 0.2s ease;
 }
 
@@ -214,20 +208,109 @@ h1 {
 /* Mobile Responsive - Keep it compact */
 @media (max-width: 600px) {
   .receipt-container {
-    grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 12px;
+    grid-template-columns: 35px 1fr; /* Checkbox column slightly smaller */
+    grid-template-areas:
+      "check itemname"
+      "check itemprice"
+      "check itempeople"
+      "check itemshare";
+    padding: 8px; /* Reduce padding */
+    gap: 4px 8px; /* Reduce gaps */
+    margin-bottom: 8px; /* Reduce margin between tiles */
   }
 
-  .receipt-header,
+  .receipt-checkbox {
+    grid-area: check;
+    align-self: flex-start;
+    padding-top: 2px; /* Adjust alignment */
+  }
+  .receipt-checkbox input[type="checkbox"] {
+    width: 20px; /* Smaller checkbox */
+    height: 20px;
+  }
+  .receipt-checkbox input[type="checkbox"]:checked::after {
+    font-size: 12px; /* Smaller checkmark */
+  }
+
+  .receipt-header {
+    grid-area: itemname;
+    text-align: left;
+    padding: 0;
+    font-size: 13px; /* Further reduce font */
+  }
   .receipt-price {
-    text-align: center;
-    padding: 6px 10px;
+    grid-area: itemprice;
+    text-align: left;
+    padding: 0;
+    font-size: 13px;
+    color: #4b5563; /* Further reduce font */
+  }
+  .receipt-people {
+    grid-area: itempeople;
+    justify-content: flex-start;
+    gap: 6px; /* Adjust gap */
+  }
+  .receipt-user-share {
+    grid-area: itemshare;
+    text-align: left;
+    padding: 0;
+    font-size: 13px; /* Further reduce font */
   }
 
-  .receipt-people input {
-    width: 50px;
-    height: 32px;
+  .people-btn {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .people-count-display {
+    font-size: 14px;
+    min-width: 20px; /* Adjust min-width */
+  }
+
+  .quick-actions {
+    flex-direction: column;
+  }
+  .action-btn {
+    max-width: none;
+  }
+
+  .user-total-container h3 {
+    font-size: 15px;
+  }
+  .user-total-container div {
+    font-size: 26px;
+  }
+  .user-total-container p {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .receipt-header,
+  .receipt-price,
+  .receipt-user-share {
+    font-size: 12px; /* Even smaller for very narrow screens */
+  }
+  .people-btn {
+    width: 26px;
+    height: 26px;
+    font-size: 14px;
+  }
+  .people-count-display {
+    font-size: 13px;
+  }
+  .receipt-container {
+    grid-template-columns: 30px 1fr; /* Even smaller checkbox column */
+    padding: 6px;
+    gap: 3px 6px;
+  }
+  .receipt-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+  }
+  .receipt-checkbox input[type="checkbox"]:checked::after {
+    font-size: 10px;
   }
 }
 

@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cash Splitter - Web</title>
     <link rel="stylesheet" href="styles.css" />
-    <!-- Add favicon and meta tags for better mobile sharing -->
     <meta
       name="description"
       content="Split your bills easily with friends using Cash Splitter"
@@ -18,16 +17,18 @@
     <meta property="og:type" content="website" />
   </head>
   <body>
+    <!-- Main application container -->
     <div class="container">
+      <!-- Application Header -->
       <header class="app-header">
         <h1>Cash Splitter</h1>
       </header>
 
-      <!-- Receipt section -->
+      <!-- Receipt Interaction Area -->
       <section class="receipt-section">
         <h2>📄 Receipt Items</h2>
 
-        <!-- Quick action buttons -->
+        <!-- Action Buttons -->
         <div class="quick-actions">
           <button type="button" class="action-btn" id="select-all-btn">
             ✅ Select All
@@ -37,13 +38,13 @@
           </button>
         </div>
 
-        <!-- User's total display area -->
+        <!-- Item List Container (Populated by JS) -->
+
         <div id="user-total" class="user-total-container">
           <!-- Content will be populated by JavaScript -->
         </div>
       </section>
     </div>
-
     <script src="main.js"></script>
   </body>
 </html>
