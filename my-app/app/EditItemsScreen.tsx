@@ -30,11 +30,13 @@ const EditItemsScreen: React.FC = () => {
   const [currentItem, setCurrentItem] = useState<ReceiptItem | null>(null);
   const [itemName, setItemName] = useState("");
   const [itemPrice, setItemPrice] = useState("");
+  const [itemQuantity, setItemQuantity] = useState("1");
 
   const openModalToAdd = () => {
     setCurrentItem(null);
     setItemName("");
     setItemPrice("");
+    setItemQuantity("1");
     setModalVisible(true);
   };
 
@@ -42,24 +44,37 @@ const EditItemsScreen: React.FC = () => {
     setCurrentItem(item);
     setItemName(item.name);
     setItemPrice(item.price.toString());
+    setItemQuantity(item.quantity.toString());
     setModalVisible(true);
   };
 
   const handleSaveItem = () => {
     const price = parseFloat(itemPrice);
-    if (!itemName.trim() || isNaN(price) || price < 0) {
-      Alert.alert("Invalid Input", "Please enter a valid name and price.");
+    const quantity = parseInt(itemQuantity, 10);
+
+    if (
+      !itemName.trim() ||
+      isNaN(price) ||
+      price < 0 ||
+      isNaN(quantity) ||
+      quantity <= 0
+    ) {
+      Alert.alert(
+        "Invalid Input",
+        "Please enter a valid name, price, and quantity (greater than 0)."
+      );
       return;
     }
 
     if (currentItem) {
-      updateItem(currentItem.id, { name: itemName, price });
+      updateItem(currentItem.id, { name: itemName, price, quantity });
     } else {
-      addItem({ name: itemName, price });
+      addItem({ name: itemName, price, quantity });
     }
     setModalVisible(false);
     setItemName("");
     setItemPrice("");
+    setItemQuantity("1");
   };
 
   const handleDeleteItem = (id: string) => {
@@ -99,7 +114,7 @@ const EditItemsScreen: React.FC = () => {
             numberOfLines={1}
             ellipsizeMode="tail"
           >
-            {item.name}
+            {item.name} (Qty: {item.quantity})
           </Text>
         </View>
       </View>
@@ -201,7 +216,7 @@ const EditItemsScreen: React.FC = () => {
       </View>
 
       <Modal
-        animationType="slide"
+        animationType="fade"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
@@ -217,13 +232,28 @@ const EditItemsScreen: React.FC = () => {
               value={itemName}
               onChangeText={setItemName}
             />
-            <TextInput
-              className="border border-slate-300 rounded-md p-[10px] w-full mb-[10px] text-base"
-              placeholder="Price"
-              value={itemPrice}
-              onChangeText={setItemPrice}
-              keyboardType="numeric"
-            />
+            <View className="flex-row justify-between w-full mb-[10px]">
+              <View className="flex-1 mr-1">
+                <Text className="text-sm text-slate-600 mb-1">Price:</Text>
+                <TextInput
+                  className="border border-slate-300 rounded-md p-[10px] text-base w-full"
+                  placeholder="0.00"
+                  value={itemPrice}
+                  onChangeText={setItemPrice}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View className="flex-1 ml-1">
+                <Text className="text-sm text-slate-600 mb-1">Quantity:</Text>
+                <TextInput
+                  className="border border-slate-300 rounded-md p-[10px] text-base w-full"
+                  placeholder="1"
+                  value={itemQuantity}
+                  onChangeText={setItemQuantity}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
             <TouchableOpacity
               className="bg-blue-500 p-3 rounded-lg items-center mt-4 w-full"
               onPress={handleSaveItem}

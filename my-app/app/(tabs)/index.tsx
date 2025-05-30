@@ -21,14 +21,14 @@ export default function HomeScreen() {
       description: "Our AI extracts all items and prices automatically",
     },
     {
-      icon: "people-outline" as const,
-      title: "Split Bill",
-      description: "Easily assign items to different people in your group",
+      icon: "create-outline" as const,
+      title: "review items",
+      description: "review the items and prices and add any missing items",
     },
     {
       icon: "share-social-outline" as const,
       title: "Share Results",
-      description: "Share the split breakdown with your friends",
+      description: "Share a link with your friends to split the bill",
     },
   ];
 
