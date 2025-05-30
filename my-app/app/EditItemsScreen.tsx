@@ -5,105 +5,12 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Modal,
   Alert,
 } from "react-native";
 import { useReceipt, ReceiptItem } from "@/contexts/ReceiptContext";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-
-// Basic styling - can be replaced with NativeWind classes later
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: "#f8f9fa",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
-    color: "#343a40",
-  },
-  itemRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
-  },
-  itemName: {
-    fontSize: 16,
-    flex: 1,
-    color: "#495057",
-  },
-  itemPrice: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#495057",
-  },
-  actionsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  subtotalContainer: {
-    marginTop: 16,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#dee2e6",
-  },
-  subtotalText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "right",
-    color: "#28a745",
-  },
-  button: {
-    backgroundColor: "#007bff",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 16,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContent: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 10,
-    width: "80%",
-    alignItems: "center",
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 15,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ced4da",
-    borderRadius: 5,
-    padding: 10,
-    width: "100%",
-    marginBottom: 10,
-    fontSize: 16,
-  },
-  iconButton: {
-    padding: 8,
-    marginLeft: 8,
-  },
-});
 
 const EditItemsScreen: React.FC = () => {
   const {
@@ -166,78 +73,89 @@ const EditItemsScreen: React.FC = () => {
   };
 
   const renderItemRow = ({ item }: { item: ReceiptItem }) => (
-    <View style={styles.itemRow}>
-      <TouchableOpacity
-        onPress={() => toggleUserItemSelection(item.id)}
-        style={styles.actionsContainer}
-      >
-        <Ionicons
-          name={
-            userSelectedItemIds.includes(item.id)
-              ? "checkbox"
-              : "square-outline"
-          }
-          size={24}
-          color={userSelectedItemIds.includes(item.id) ? "#007bff" : "#6c757d"}
-        />
-      </TouchableOpacity>
-      <Text style={styles.itemName} numberOfLines={1} ellipsizeMode="tail">
-        {item.name}
-      </Text>
-      <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
-      <TouchableOpacity
-        onPress={() => openModalToEdit(item)}
-        style={styles.iconButton}
-      >
-        <Ionicons name="pencil" size={20} color="#ffc107" />
-      </TouchableOpacity>
-      <TouchableOpacity
-        onPress={() => handleDeleteItem(item.id)}
-        style={styles.iconButton}
-      >
-        <Ionicons name="trash" size={20} color="#dc3545" />
-      </TouchableOpacity>
+    <View className="flex-row justify-between items-center py-3 border-b border-slate-200">
+      <View className="flex-row items-center flex-1 min-w-0 mr-2">
+        <TouchableOpacity
+          onPress={() => toggleUserItemSelection(item.id)}
+          className="mr-2"
+        >
+          <Ionicons
+            name={
+              userSelectedItemIds.includes(item.id)
+                ? "checkbox"
+                : "square-outline"
+            }
+            size={24}
+            color={
+              userSelectedItemIds.includes(item.id) ? "#007bff" : "#6c757d"
+            }
+          />
+        </TouchableOpacity>
+        <View className="bg-sky-100 px-3 py-1.5 rounded-xl flex-shrink min-w-0">
+          <Text
+            className="text-base text-slate-600"
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {item.name}
+          </Text>
+        </View>
+      </View>
+      <View className="flex-row items-center">
+        <Text className="text-base font-bold text-slate-600 mr-2">
+          ${item.price.toFixed(2)}
+        </Text>
+        <TouchableOpacity onPress={() => openModalToEdit(item)} className="p-2">
+          <Ionicons name="pencil" size={20} color="#ffc107" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => handleDeleteItem(item.id)}
+          className="p-2 ml-1"
+        >
+          <Ionicons name="trash" size={20} color="#dc3545" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Edit Receipt Items</Text>
+    <View className="flex-1 p-4 bg-slate-50">
+      <Text className="text-2xl font-bold mb-4 text-slate-700">
+        Edit Receipt Items
+      </Text>
 
       <FlatList
         data={items}
         renderItem={renderItemRow}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={
-          <Text
-            style={{
-              textAlign: "center",
-              marginVertical: 20,
-              fontSize: 16,
-              color: "#6c757d",
-            }}
-          >
+          <Text className="text-center my-5 text-base text-slate-500">
             No items yet. Add some!
           </Text>
         }
       />
 
-      <TouchableOpacity style={styles.button} onPress={openModalToAdd}>
-        <Text style={styles.buttonText}>Add New Item</Text>
+      <TouchableOpacity
+        className="bg-blue-500 p-3 rounded-lg items-center mt-4"
+        onPress={openModalToAdd}
+      >
+        <Text className="text-white text-base font-bold">Add New Item</Text>
       </TouchableOpacity>
 
-      <View style={styles.subtotalContainer}>
-        <Text style={styles.subtotalText}>
+      <View className="mt-4 py-2 border-t border-slate-300">
+        <Text className="text-lg font-bold text-right text-green-600">
           Your Subtotal: ${userSubtotal.toFixed(2)}
         </Text>
       </View>
 
       <TouchableOpacity
-        style={styles.button}
+        className="bg-blue-500 p-3 rounded-lg items-center mt-4 disabled:opacity-50"
         onPress={handleFinalize}
         disabled={items.length === 0}
       >
-        <Text style={styles.buttonText}>Finalize & Get Link</Text>
+        <Text className="text-white text-base font-bold">
+          Finalize & Get Link
+        </Text>
       </TouchableOpacity>
 
       <Modal
@@ -246,38 +164,35 @@ const EditItemsScreen: React.FC = () => {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
+        <View className="flex-1 justify-center items-center bg-black/50">
+          <View className="bg-white p-5 rounded-xl w-4/5 items-center">
+            <Text className="text-xl font-bold mb-4">
               {currentItem ? "Edit Item" : "Add New Item"}
             </Text>
             <TextInput
-              style={styles.input}
+              className="border border-slate-300 rounded-md p-[10px] w-full mb-[10px] text-base"
               placeholder="Item Name"
               value={itemName}
               onChangeText={setItemName}
             />
             <TextInput
-              style={styles.input}
+              className="border border-slate-300 rounded-md p-[10px] w-full mb-[10px] text-base"
               placeholder="Price"
               value={itemPrice}
               onChangeText={setItemPrice}
               keyboardType="numeric"
             />
             <TouchableOpacity
-              style={[styles.button, { width: "100%" }]}
+              className="bg-blue-500 p-3 rounded-lg items-center mt-4 w-full"
               onPress={handleSaveItem}
             >
-              <Text style={styles.buttonText}>Save Item</Text>
+              <Text className="text-white text-base font-bold">Save Item</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                styles.button,
-                { backgroundColor: "#6c757d", width: "100%", marginTop: 10 },
-              ]}
+              className="bg-slate-500 p-3 rounded-lg items-center w-full mt-[10px]"
               onPress={() => setModalVisible(false)}
             >
-              <Text style={styles.buttonText}>Cancel</Text>
+              <Text className="text-white text-base font-bold">Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>

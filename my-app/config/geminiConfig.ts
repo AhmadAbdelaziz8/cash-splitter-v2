@@ -1,19 +1,17 @@
-import { GoogleGenerativeAI, Part } from "@google/generative-ai";
-
-// ⚠️ SECURITY WARNING: This API key is exposed client-side!
-// 🚨 FOR PRODUCTION: Move this to a secure backend server
-// 📚 FOR DEVELOPMENT: This is acceptable for learning/prototyping
+import { GoogleGenerativeAI, Part, SchemaType } from "@google/generative-ai";
 const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
 
-// Type definitions for better type safety
 export interface ReceiptItem {
   itemName: string;
   itemPrice: number;
+  quantity: number;
 }
 
 export interface ParsedReceiptData {
   items: ReceiptItem[];
   total: number;
+  tax?: number;
+  service?: number;
 }
 
 export interface ParseResult {
@@ -37,8 +35,30 @@ export async function parseReceiptImage(
   try {
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash-preview-05-20",
+      model: "gemini-2.0-flash",
     });
+
+    const receiptSchema: any = {
+      type: SchemaType.OBJECT,
+      properties: {
+        items: {
+          type: SchemaType.ARRAY,
+          items: {
+            type: SchemaType.OBJECT,
+            properties: {
+              itemName: { type: SchemaType.STRING },
+              itemPrice: { type: SchemaType.NUMBER },
+              quantity: { type: SchemaType.NUMBER, nullable: true },
+            },
+            required: ["itemName", "itemPrice"],
+          },
+        },
+        total: { type: SchemaType.NUMBER },
+        tax: { type: SchemaType.NUMBER, nullable: true }, // Make tax optional
+        service: { type: SchemaType.NUMBER, nullable: true }, // Make service optional
+      },
+      required: ["items", "total"], // Items and total are likely always required
+    };
 
     // Strip data URL prefix if it exists
     let cleanBase64 = base64Image;
@@ -56,21 +76,18 @@ export async function parseReceiptImage(
       },
     };
 
-    const prompt = `Analyze this receipt image and extract all items with their prices.
+    const prompt = `Analyze this receipt image. Extract all distinct items with their individual prices and quantities if available.
+Also, identify any overall tax and service charge amounts.
+If quantity for an item is not found, it can be omitted or set to null (it will default to 1).
+If tax or service charges are not found, they can be omitted or set to null.`;
 
-CRITICAL: Return ONLY a valid JSON object in this EXACT format:
-{"items": [{"itemName": "string", "itemPrice": number}], "total": number}
-
-Rules:
-- Do not include any text before or after the JSON
-- Do not use markdown formatting or code blocks
-- Ensure itemPrice and total are numbers, not strings
-- If you cannot read the receipt clearly, return empty items array and total: 0
-
-Example output:
-{"items": [{"itemName": "Coffee", "itemPrice": 4.50}], "total": 4.50}`;
-
-    const result = await model.generateContent([prompt, imagePart]);
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }, imagePart] }],
+      generationConfig: {
+        responseMimeType: "application/json",
+        responseSchema: receiptSchema,
+      },
+    });
     const response = result.response;
     const text = response.text().trim();
 
@@ -154,6 +171,24 @@ function validateParsedData(data: any): { isValid: boolean; error?: string } {
         error: `Item ${i} has invalid itemPrice: ${item.itemPrice}`,
       };
     }
+
+    // Validate and default quantity for each item
+    if (item.quantity === undefined || item.quantity === null) {
+      item.quantity = 1;
+    } else if (typeof item.quantity === "string") {
+      const parsedQuantity = parseFloat(item.quantity);
+      if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
+        item.quantity = 1; // Default to 1 if parsing fails or quantity is invalid
+      } else {
+        item.quantity = parsedQuantity;
+      }
+    } else if (
+      typeof item.quantity !== "number" ||
+      isNaN(item.quantity) ||
+      item.quantity <= 0
+    ) {
+      item.quantity = 1; // Default to 1 if not a valid number
+    }
   }
 
   if (typeof data.total === "string") {
@@ -164,18 +199,56 @@ function validateParsedData(data: any): { isValid: boolean; error?: string } {
     data.total = parsed;
   }
 
+  // Validate optional tax field
+  if (data.tax !== undefined && data.tax !== null) {
+    if (typeof data.tax === "string") {
+      const parsed = parseFloat(data.tax);
+      if (isNaN(parsed)) {
+        return { isValid: false, error: `Invalid tax value: ${data.tax}` };
+      }
+      data.tax = parsed;
+    } else if (typeof data.tax !== "number" || isNaN(data.tax)) {
+      return { isValid: false, error: `Tax is not a number: ${data.tax}` };
+    }
+  } else if (data.tax === null) {
+    delete data.tax; // Remove null tax, treat as not present
+  }
+
+  // Validate optional service field
+  if (data.service !== undefined && data.service !== null) {
+    if (typeof data.service === "string") {
+      const parsed = parseFloat(data.service);
+      if (isNaN(parsed)) {
+        return {
+          isValid: false,
+          error: `Invalid service value: ${data.service}`,
+        };
+      }
+      data.service = parsed;
+    } else if (typeof data.service !== "number" || isNaN(data.service)) {
+      return {
+        isValid: false,
+        error: `Service is not a number: ${data.service}`,
+      };
+    }
+  } else if (data.service === null) {
+    delete data.service; // Remove null service, treat as not present
+  }
+
   return { isValid: true };
 }
 
 function getMockData(): ParsedReceiptData {
   return {
     items: [
-      { itemName: "Burger", itemPrice: 10.99 },
-      { itemName: "Fries", itemPrice: 3.5 },
-      { itemName: "Soda", itemPrice: 2.5 },
-      { itemName: "Ice Cream", itemPrice: 4.99 },
-      { itemName: "Coffee", itemPrice: 3.99 },
+      { itemName: "Burger", itemPrice: 10.99, quantity: 1 },
+      { itemName: "Fries", itemPrice: 3.5, quantity: 2 },
+      { itemName: "Soda", itemPrice: 2.5, quantity: 1 },
+      { itemName: "Ice Cream", itemPrice: 4.99, quantity: 1 },
+      { itemName: "Coffee", itemPrice: 3.99, quantity: 1 },
     ],
     total: 25.97,
+    tax: 3.64,
+    service: 2.6,
   };
 }

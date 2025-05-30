@@ -2,7 +2,6 @@ import { GoogleGenerativeAI, Part } from "@google/generative-ai";
 import {
   ParseResult,
   ParsedReceiptData,
-  ReceiptItem as APIReceiptItem,
 } from "@/types";
 import { API, MESSAGES } from "@/constants/AppConstants";
 import { errorHandler, ErrorType } from "@/utils/errorUtils";
