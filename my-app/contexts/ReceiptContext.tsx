@@ -24,9 +24,10 @@ interface ReceiptContextType {
   imageUri: string | null;
   imageBase64: string | null;
   items: ReceiptItem[];
-  receiptTotal: number; // Added from parsed receipt
-  receiptTax: number | null; // Added from parsed receipt
-  receiptService: number | null; // Added from parsed receipt
+  receiptTotal: number; // This will now be the dynamically calculated grand total
+  receiptTax: number | null;
+  receiptService: number | string | null; // Updated type
+  originalReceiptTotal: number | null; // Store the total as parsed from the receipt by LLM
   userSelectedItemIds: string[];
   userSubtotal: number;
   shareableLink: string | null;
@@ -40,6 +41,8 @@ interface ReceiptContextType {
   updateItem: (id: string, updates: Partial<Omit<ReceiptItem, "id">>) => void;
   deleteItem: (id: string) => void;
   toggleUserItemSelection: (id: string) => void;
+  updateReceiptTax: (newTax: number | null) => void; // New mutator
+  updateReceiptService: (newService: number | string | null) => void; // New mutator
   generateShareableLink: () => void;
   resetState: () => void;
 }
@@ -54,9 +57,14 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [items, setItems] = useState<ReceiptItem[]>([]);
-  const [receiptTotal, setReceiptTotal] = useState<number>(0);
+  const [receiptTotal, setReceiptTotal] = useState<number>(0); // Dynamically calculated
+  const [originalReceiptTotal, setOriginalReceiptTotal] = useState<
+    number | null
+  >(null); // From LLM
   const [receiptTax, setReceiptTax] = useState<number | null>(null);
-  const [receiptService, setReceiptService] = useState<number | null>(null);
+  const [receiptService, setReceiptService] = useState<number | string | null>(
+    null
+  ); // Updated type
   const [userSelectedItemIds, setUserSelectedItemIds] = useState<string[]>([]);
   const [userSubtotal, setUserSubtotal] = useState<number>(0);
   const [shareableLink, setShareableLink] = useState<string | null>(null);
@@ -70,8 +78,10 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
       quantity: item.quantity || 1, // Already defaulted in geminiConfig, but good fallback
     }));
     setItems(newItems);
-    setReceiptTotal(data.total);
+    setOriginalReceiptTotal(data.total ?? null); // Store the LLM provided total
     setReceiptTax(data.tax ?? null);
+    // For service, if it's a number string from LLM (but not percentage), geminiConfig validation might have converted it.
+    // If it's a percentage string (e.g., "10%"), it remains a string.
     setReceiptService(data.service ?? null);
     setUserSelectedItemIds([]); // Clear selections when new receipt is processed
   };
@@ -111,15 +121,48 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     );
   };
 
+  const updateReceiptTax = (newTax: number | null) => {
+    setReceiptTax(newTax);
+  };
+
+  const updateReceiptService = (newService: number | string | null) => {
+    setReceiptService(newService);
+  };
+
+  // Effect to calculate user subtotal
   useEffect(() => {
     const subtotal = items.reduce((acc, item) => {
       if (userSelectedItemIds.includes(item.id)) {
-        return acc + item.price * item.quantity; // Consider quantity in subtotal
+        return acc + item.price * item.quantity;
       }
       return acc;
     }, 0);
     setUserSubtotal(subtotal);
   }, [items, userSelectedItemIds]);
+
+  // Effect to calculate grand total based on items, tax, and service
+  useEffect(() => {
+    const itemsSubtotal = items.reduce(
+      (acc, item) => acc + item.price * item.quantity,
+      0
+    );
+
+    const currentTax = receiptTax ?? 0;
+    let currentServiceAmount = 0;
+
+    if (typeof receiptService === "number") {
+      currentServiceAmount = receiptService;
+    } else if (typeof receiptService === "string") {
+      const percentageMatch = receiptService.match(/^(\d*\.?\d+)%$/);
+      if (percentageMatch && percentageMatch[1]) {
+        const percentage = parseFloat(percentageMatch[1]);
+        if (!isNaN(percentage)) {
+          currentServiceAmount = (percentage / 100) * itemsSubtotal;
+        }
+      }
+    }
+    setReceiptTotal(itemsSubtotal + currentTax + currentServiceAmount);
+  }, [items, receiptTax, receiptService]);
 
   const generateShareableLink = () => {
     const staticSiteBaseUrl = WEB_SHARING.BASE_URL;
@@ -131,9 +174,10 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     }));
     const shareData = {
       items: itemsForLink,
-      total: receiptTotal, // Adding receipt total to shared link
+      total: receiptTotal, // This is now the calculated total
       tax: receiptTax,
-      service: receiptService,
+      service: receiptService, // Share service as number or string "10%"
+      originalTotal: originalReceiptTotal, // Optionally share the original parsed total
     };
     const dataString = JSON.stringify(shareData);
     const encodedData = encodeURIComponent(dataString);
@@ -146,6 +190,7 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     setImageBase64(null);
     setItems([]);
     setReceiptTotal(0);
+    setOriginalReceiptTotal(null);
     setReceiptTax(null);
     setReceiptService(null);
     setUserSelectedItemIds([]);
@@ -158,9 +203,10 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         imageUri,
         imageBase64,
         items,
-        receiptTotal,
+        receiptTotal, // Calculated grand total
         receiptTax,
         receiptService,
+        originalReceiptTotal, // LLM parsed total
         userSelectedItemIds,
         userSubtotal,
         shareableLink,
@@ -171,6 +217,8 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         updateItem,
         deleteItem,
         toggleUserItemSelection,
+        updateReceiptTax,
+        updateReceiptService,
         generateShareableLink,
         resetState,
       }}

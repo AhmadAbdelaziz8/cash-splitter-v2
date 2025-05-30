@@ -11,7 +11,7 @@ export interface ParsedReceiptData {
   items: ReceiptItem[];
   total: number;
   tax?: number;
-  service?: number;
+  service?: number | string; // Can be a fixed number or a percentage string e.g., "10%"
 }
 
 export interface ParseResult {
@@ -28,14 +28,14 @@ export async function parseReceiptImage(
     return {
       success: false,
       error: "Google API Key not configured. Please check your .env file.",
-      data: getMockData(),
+      data: getMockData(), // Provide mock data for development without API key
     };
   }
 
   try {
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: "gemini-1.5-flash", // Consider using the latest available model version
     });
 
     const receiptSchema: any = {
@@ -54,13 +54,16 @@ export async function parseReceiptImage(
           },
         },
         total: { type: SchemaType.NUMBER },
-        tax: { type: SchemaType.NUMBER, nullable: true }, // Make tax optional
-        service: { type: SchemaType.NUMBER, nullable: true }, // Make service optional
+        tax: { type: SchemaType.NUMBER, nullable: true },
+        service: {
+          type: [SchemaType.NUMBER, SchemaType.STRING], // Accept both number and string
+          nullable: true,
+          description: "Service charge. Can be a fixed amount (number) or a percentage (string, e.g., '10%')."
+        },
       },
-      required: ["items", "total"], // Items and total are likely always required
+      required: ["items", "total"],
     };
 
-    // Strip data URL prefix if it exists
     let cleanBase64 = base64Image;
     if (base64Image.startsWith("data:")) {
       const base64Index = base64Image.indexOf(",");
@@ -76,8 +79,10 @@ export async function parseReceiptImage(
       },
     };
 
-    const prompt = `Analyze this receipt image. Extract all distinct items with their individual prices and quantities if available.
-Also, identify any overall tax and service charge amounts.
+    const prompt = `Analyze this receipt image.
+Extract all distinct items with their individual prices and quantities if available.
+Identify any overall tax amount.
+Identify any service charge. If the service charge is a percentage, return it as a string (e.g., "10%", "12.5%"). If it's a fixed amount, return it as a number.
 If quantity for an item is not found, it can be omitted or set to null (it will default to 1).
 If tax or service charges are not found, they can be omitted or set to null.`;
 
@@ -112,7 +117,7 @@ If tax or service charges are not found, they can be omitted or set to null.`;
           extractionError instanceof Error
             ? extractionError.message
             : String(extractionError);
-        throw new Error(`Failed to parse JSON from response: ${errorMsg}`);
+        throw new Error(`Failed to parse JSON from response: ${errorMsg}. Original text: ${text}`);
       }
     }
 
@@ -128,11 +133,11 @@ If tax or service charges are not found, they can be omitted or set to null.`;
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
-
+    console.error("Error in parseReceiptImage:", error); // Log the full error
     return {
       success: false,
       error: errorMessage,
-      data: getMockData(),
+      data: getMockData(), // Fallback to mock data on error during development
     };
   }
 }
@@ -141,21 +146,26 @@ function validateParsedData(data: any): { isValid: boolean; error?: string } {
   if (!data || typeof data !== "object") {
     return { isValid: false, error: "Data is not an object" };
   }
-
   if (!Array.isArray(data.items)) {
     return { isValid: false, error: "Items is not an array" };
   }
-
-  if (typeof data.total !== "number" && typeof data.total !== "string") {
+  if (typeof data.total !== "number" && typeof data.total !== "string") { // Allow string for total initially if LLM sends it
     return { isValid: false, error: "Total is not a number or string" };
   }
+   if (typeof data.total === "string") { // Convert total to number if it's a string
+    const parsedTotal = parseFloat(data.total);
+    if (isNaN(parsedTotal)) {
+      return { isValid: false, error: `Invalid total: ${data.total}` };
+    }
+    data.total = parsedTotal;
+  }
+
 
   for (let i = 0; i < data.items.length; i++) {
     const item = data.items[i];
     if (!item.itemName || typeof item.itemName !== "string") {
       return { isValid: false, error: `Item ${i} has invalid itemName` };
     }
-
     if (typeof item.itemPrice === "string") {
       const parsed = parseFloat(item.itemPrice);
       if (isNaN(parsed)) {
@@ -171,14 +181,12 @@ function validateParsedData(data: any): { isValid: boolean; error?: string } {
         error: `Item ${i} has invalid itemPrice: ${item.itemPrice}`,
       };
     }
-
-    // Validate and default quantity for each item
     if (item.quantity === undefined || item.quantity === null) {
       item.quantity = 1;
     } else if (typeof item.quantity === "string") {
       const parsedQuantity = parseFloat(item.quantity);
       if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
-        item.quantity = 1; // Default to 1 if parsing fails or quantity is invalid
+        item.quantity = 1;
       } else {
         item.quantity = parsedQuantity;
       }
@@ -187,19 +195,10 @@ function validateParsedData(data: any): { isValid: boolean; error?: string } {
       isNaN(item.quantity) ||
       item.quantity <= 0
     ) {
-      item.quantity = 1; // Default to 1 if not a valid number
+      item.quantity = 1;
     }
   }
 
-  if (typeof data.total === "string") {
-    const parsed = parseFloat(data.total);
-    if (isNaN(parsed)) {
-      return { isValid: false, error: `Invalid total: ${data.total}` };
-    }
-    data.total = parsed;
-  }
-
-  // Validate optional tax field
   if (data.tax !== undefined && data.tax !== null) {
     if (typeof data.tax === "string") {
       const parsed = parseFloat(data.tax);
@@ -211,44 +210,61 @@ function validateParsedData(data: any): { isValid: boolean; error?: string } {
       return { isValid: false, error: `Tax is not a number: ${data.tax}` };
     }
   } else if (data.tax === null) {
-    delete data.tax; // Remove null tax, treat as not present
+    // delete data.tax; // Keep null as a valid state, or handle as 0 in context
   }
 
   // Validate optional service field
   if (data.service !== undefined && data.service !== null) {
     if (typeof data.service === "string") {
-      const parsed = parseFloat(data.service);
-      if (isNaN(parsed)) {
-        return {
-          isValid: false,
-          error: `Invalid service value: ${data.service}`,
-        };
+      // Check if it's a percentage string like "10%", "12.5%"
+      if (!/^\d+(\.\d+)?%$/.test(data.service)) {
+        // If it's a string but not a valid percentage, try to parse as number.
+        // This handles cases where LLM might send "15.00" as string for a fixed amount.
+        const parsedServiceNum = parseFloat(data.service);
+        if (isNaN(parsedServiceNum)) {
+          return {
+            isValid: false,
+            error: `Invalid service string format: ${data.service}. Expected number or percentage string (e.g., '10%').`,
+          };
+        }
+        data.service = parsedServiceNum; // Convert to number if it was a numeric string
       }
-      data.service = parsed;
+      // If it IS a valid percentage string (e.g. "10%"), keep as string.
     } else if (typeof data.service !== "number" || isNaN(data.service)) {
       return {
         isValid: false,
-        error: `Service is not a number: ${data.service}`,
+        error: `Service is not a valid number or percentage string: ${data.service}`,
       };
     }
   } else if (data.service === null) {
-    delete data.service; // Remove null service, treat as not present
+    // delete data.service; // Keep null as a valid state, or handle as 0/not present in context
   }
 
   return { isValid: true };
 }
 
 function getMockData(): ParsedReceiptData {
+  // Updated mock data to reflect possible service charge types
+  const serviceType = Math.random();
+  let mockService: number | string | undefined;
+  if (serviceType < 0.4) {
+    mockService = 15.00; // Fixed amount
+  } else if (serviceType < 0.8) {
+    mockService = "12.5%"; // Percentage
+  } else {
+    mockService = undefined; // No service charge
+  }
+
   return {
     items: [
       { itemName: "Burger", itemPrice: 10.99, quantity: 1 },
-      { itemName: "Fries", itemPrice: 3.5, quantity: 2 },
-      { itemName: "Soda", itemPrice: 2.5, quantity: 1 },
-      { itemName: "Ice Cream", itemPrice: 4.99, quantity: 1 },
-      { itemName: "Coffee", itemPrice: 3.99, quantity: 1 },
+      { itemName: "Fries", itemPrice: 3.50, quantity: 2 },
+      { itemName: "Soda", itemPrice: 2.50, quantity: 1 },
+      { itemName: "Salad", itemPrice: 8.75, quantity: 1 },
+      { itemName: "Coffee", itemPrice: 3.25, quantity: 2 },
     ],
-    total: 25.97,
+    total: 40.00, // Example total, should be calculated based on items, tax, service in real use
     tax: 3.64,
-    service: 2.6,
+    service: mockService,
   };
 }

@@ -1,5 +1,4 @@
 import type { PropsWithChildren, ReactElement } from "react";
-import { StyleSheet } from "react-native";
 import Animated, {
   interpolate,
   useAnimatedRef,
@@ -11,7 +10,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { useBottomTabOverflow } from "@/components/ui/TabBarBackground";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
-// Further reduce header height
+// Defines the height of the parallax header.
 const HEADER_HEIGHT = 30;
 
 type Props = PropsWithChildren<{
@@ -27,7 +26,8 @@ export default function ParallaxScrollView({
   const colorScheme = useColorScheme() ?? "light";
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
-  const bottom = useBottomTabOverflow();
+  const bottom = useBottomTabOverflow(); // Considers bottom tab bar height for scroll insets.
+
   const headerAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
@@ -50,21 +50,22 @@ export default function ParallaxScrollView({
   });
 
   return (
-    <ThemedView style={styles.container}>
+    <ThemedView className="flex-1">
       <Animated.ScrollView
         ref={scrollRef}
         scrollEventThrottle={16}
         scrollIndicatorInsets={{ bottom }}
         contentContainerStyle={{
-          paddingBottom: bottom,
-          paddingTop: 15,
+          paddingBottom: bottom, // Ensures content is not hidden by a bottom tab bar.
+          paddingTop: 15, // Standard top padding for content within the scroll view.
         }}
       >
         {headerImage && (
           <Animated.View
             style={[
-              styles.header,
               {
+                height: HEADER_HEIGHT,
+                overflow: "hidden",
                 backgroundColor: headerBackgroundColor
                   ? headerBackgroundColor[colorScheme]
                   : "transparent",
@@ -75,26 +76,10 @@ export default function ParallaxScrollView({
             {headerImage}
           </Animated.View>
         )}
-        <ThemedView style={styles.content}>{children}</ThemedView>
+        <ThemedView className="flex-1 px-5 pt-[15px] pb-8 gap-4 overflow-hidden">
+          {children}
+        </ThemedView>
       </Animated.ScrollView>
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    height: HEADER_HEIGHT,
-    overflow: "hidden",
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 15,
-    paddingBottom: 32,
-    gap: 16,
-    overflow: "hidden",
-  },
-});

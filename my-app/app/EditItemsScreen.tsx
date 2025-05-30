@@ -24,28 +24,40 @@ const EditItemsScreen: React.FC = () => {
     receiptTotal,
     receiptTax,
     receiptService,
+    originalReceiptTotal,
+    updateReceiptTax,
+    updateReceiptService,
   } = useReceipt();
 
-  const [modalVisible, setModalVisible] = useState(false);
+  const [itemModalVisible, setItemModalVisible] = useState(false);
   const [currentItem, setCurrentItem] = useState<ReceiptItem | null>(null);
   const [itemName, setItemName] = useState("");
   const [itemPrice, setItemPrice] = useState("");
   const [itemQuantity, setItemQuantity] = useState("1");
 
-  const openModalToAdd = () => {
+  const [taxModalVisible, setTaxModalVisible] = useState(false);
+  const [editableTax, setEditableTax] = useState("");
+
+  const [serviceModalVisible, setServiceModalVisible] = useState(false);
+  const [editableService, setEditableService] = useState("");
+  const [serviceType, setServiceType] = useState<"fixed" | "percentage">(
+    "fixed"
+  );
+
+  const openItemModalToAdd = () => {
     setCurrentItem(null);
     setItemName("");
     setItemPrice("");
     setItemQuantity("1");
-    setModalVisible(true);
+    setItemModalVisible(true);
   };
 
-  const openModalToEdit = (item: ReceiptItem) => {
+  const openItemModalToEdit = (item: ReceiptItem) => {
     setCurrentItem(item);
     setItemName(item.name);
     setItemPrice(item.price.toString());
     setItemQuantity(item.quantity.toString());
-    setModalVisible(true);
+    setItemModalVisible(true);
   };
 
   const handleSaveItem = () => {
@@ -71,7 +83,7 @@ const EditItemsScreen: React.FC = () => {
     } else {
       addItem({ name: itemName, price, quantity });
     }
-    setModalVisible(false);
+    setItemModalVisible(false);
     setItemName("");
     setItemPrice("");
     setItemQuantity("1");
@@ -87,6 +99,53 @@ const EditItemsScreen: React.FC = () => {
   const handleFinalize = () => {
     generateShareableLink();
     router.push("/ShareLinkScreen");
+  };
+
+  const openTaxModal = () => {
+    setEditableTax(receiptTax?.toString() ?? "0");
+    setTaxModalVisible(true);
+  };
+
+  const handleSaveTax = () => {
+    const newTax = parseFloat(editableTax);
+    if (isNaN(newTax) || newTax < 0) {
+      Alert.alert(
+        "Invalid Tax",
+        "Please enter a valid non-negative number for tax."
+      );
+      return;
+    }
+    updateReceiptTax(newTax > 0 ? newTax : null);
+    setTaxModalVisible(false);
+  };
+
+  const openServiceModal = () => {
+    if (typeof receiptService === "string" && receiptService.includes("%")) {
+      setServiceType("percentage");
+      setEditableService(parseFloat(receiptService).toString() || "0");
+    } else {
+      setServiceType("fixed");
+      setEditableService((receiptService as number)?.toString() ?? "0");
+    }
+    setServiceModalVisible(true);
+  };
+
+  const handleSaveService = () => {
+    const serviceValue = parseFloat(editableService);
+    if (isNaN(serviceValue) || serviceValue < 0) {
+      Alert.alert(
+        "Invalid Service Value",
+        "Please enter a valid non-negative number."
+      );
+      return;
+    }
+
+    if (serviceType === "percentage") {
+      updateReceiptService(serviceValue > 0 ? `${serviceValue}%` : null);
+    } else {
+      updateReceiptService(serviceValue > 0 ? serviceValue : null);
+    }
+    setServiceModalVisible(false);
   };
 
   const renderItemRow = ({ item }: { item: ReceiptItem }) => (
@@ -122,7 +181,10 @@ const EditItemsScreen: React.FC = () => {
         <Text className="text-base font-bold text-slate-600 mr-2">
           ${item.price.toFixed(2)}
         </Text>
-        <TouchableOpacity onPress={() => openModalToEdit(item)} className="p-2">
+        <TouchableOpacity
+          onPress={() => openItemModalToEdit(item)}
+          className="p-2"
+        >
           <Ionicons name="pencil" size={20} color="#ffc107" />
         </TouchableOpacity>
         <TouchableOpacity
@@ -138,6 +200,88 @@ const EditItemsScreen: React.FC = () => {
   const currentItemsSubtotal = useMemo(() => {
     return items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   }, [items]);
+
+  const renderListFooter = () => {
+    let serviceDisplayAmount = 0;
+    let serviceDisplayText = "Service:";
+
+    if (typeof receiptService === "number") {
+      serviceDisplayAmount = receiptService;
+      serviceDisplayText = "Service (Fixed):";
+    } else if (
+      typeof receiptService === "string" &&
+      receiptService.includes("%")
+    ) {
+      const percentage = parseFloat(receiptService);
+      if (!isNaN(percentage)) {
+        serviceDisplayAmount = (percentage / 100) * currentItemsSubtotal;
+        serviceDisplayText = `Service (${receiptService}):`;
+      }
+    }
+
+    return (
+      <View className="mt-6 pt-4 border-t border-slate-300">
+        <View className="flex-row justify-between items-center mb-1">
+          <Text className="text-base text-slate-600">Items Subtotal:</Text>
+          <Text className="text-base font-semibold text-slate-700">
+            ${currentItemsSubtotal.toFixed(2)}
+          </Text>
+        </View>
+
+        <View className="flex-row justify-between items-center mb-1">
+          <View className="flex-row items-center">
+            <Text className="text-base text-slate-600 mr-2">Tax:</Text>
+            <TouchableOpacity
+              onPress={openTaxModal}
+              className="p-1.5 bg-slate-100 rounded-lg active:bg-slate-200"
+            >
+              <Ionicons name="pencil" size={18} color="#475569" />
+            </TouchableOpacity>
+          </View>
+          <Text className="text-base font-semibold text-slate-700">
+            ${(receiptTax ?? 0).toFixed(2)}
+          </Text>
+        </View>
+
+        <View className="flex-row justify-between items-center mb-1">
+          <View className="flex-row items-center">
+            <Text className="text-base text-slate-600 mr-2">
+              {serviceDisplayText}
+            </Text>
+            <TouchableOpacity
+              onPress={openServiceModal}
+              className="p-1.5 bg-slate-100 rounded-lg active:bg-slate-200"
+            >
+              <Ionicons name="pencil" size={18} color="#475569" />
+            </TouchableOpacity>
+          </View>
+          <Text className="text-base font-semibold text-slate-700">
+            ${serviceDisplayAmount.toFixed(2)}
+          </Text>
+        </View>
+
+        {originalReceiptTotal !== null && (
+          <View className="flex-row justify-between items-center mb-1 mt-1 opacity-70">
+            <Text className="text-sm text-slate-500">
+              Original Receipt Total:
+            </Text>
+            <Text className="text-sm font-semibold text-slate-600">
+              ${originalReceiptTotal.toFixed(2)}
+            </Text>
+          </View>
+        )}
+
+        <View className="flex-row justify-between items-center mt-2 pt-2 border-t border-slate-200">
+          <Text className="text-lg font-bold text-slate-800">
+            Final Grand Total:
+          </Text>
+          <Text className="text-lg font-bold text-slate-800">
+            ${receiptTotal.toFixed(2)}
+          </Text>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <View className="flex-1 p-4 bg-slate-50">
@@ -155,51 +299,13 @@ const EditItemsScreen: React.FC = () => {
             No items yet. Add some!
           </Text>
         }
-        ListFooterComponent={() => (
-          <View className="mt-6 pt-4 border-t border-slate-300">
-            <View className="flex-row justify-between items-center mb-1">
-              <Text className="text-base text-slate-600">Items Subtotal:</Text>
-              <Text className="text-base font-semibold text-slate-700">
-                ${currentItemsSubtotal.toFixed(2)}
-              </Text>
-            </View>
-            {receiptTax !== null && receiptTax > 0 && (
-              <View className="flex-row justify-between items-center mb-1">
-                <Text className="text-base text-slate-600">
-                  Tax (from receipt):
-                </Text>
-                <Text className="text-base font-semibold text-slate-700">
-                  ${receiptTax.toFixed(2)}
-                </Text>
-              </View>
-            )}
-            {receiptService !== null && receiptService > 0 && (
-              <View className="flex-row justify-between items-center mb-1">
-                <Text className="text-base text-slate-600">
-                  Service (from receipt):
-                </Text>
-                <Text className="text-base font-semibold text-slate-700">
-                  ${receiptService.toFixed(2)}
-                </Text>
-              </View>
-            )}
-            <View className="flex-row justify-between items-center mt-2 pt-2 border-t border-slate-200">
-              <Text className="text-lg font-bold text-slate-800">
-                Receipt Grand Total:
-              </Text>
-              <Text className="text-lg font-bold text-slate-800">
-                ${receiptTotal.toFixed(2)}
-              </Text>
-            </View>
-          </View>
-        )}
+        ListFooterComponent={renderListFooter}
       />
 
-      {/* Button Container */}
       <View className="flex-row justify-between items-center mt-4">
         <TouchableOpacity
           className="bg-blue-500 p-3 rounded-lg items-center flex-1 mr-2"
-          onPress={openModalToAdd}
+          onPress={openItemModalToAdd}
         >
           <Text className="text-white text-base font-bold">Add New Item</Text>
         </TouchableOpacity>
@@ -218,8 +324,8 @@ const EditItemsScreen: React.FC = () => {
       <Modal
         animationType="fade"
         transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        visible={itemModalVisible}
+        onRequestClose={() => setItemModalVisible(false)}
       >
         <View className="flex-1 justify-center items-center bg-black/50">
           <View className="bg-white p-5 rounded-xl w-4/5 items-center">
@@ -262,10 +368,128 @@ const EditItemsScreen: React.FC = () => {
             </TouchableOpacity>
             <TouchableOpacity
               className="bg-slate-500 p-3 rounded-lg items-center w-full mt-[10px]"
-              onPress={() => setModalVisible(false)}
+              onPress={() => setItemModalVisible(false)}
             >
               <Text className="text-white text-base font-bold">Cancel</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={taxModalVisible}
+        onRequestClose={() => setTaxModalVisible(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50">
+          <View className="bg-white p-5 rounded-xl w-4/5 items-center">
+            <Text className="text-xl font-bold mb-4">Edit Tax</Text>
+            <TextInput
+              className="border border-slate-300 rounded-md p-[10px] w-full mb-4 text-base"
+              placeholder="Tax Amount"
+              value={editableTax}
+              onChangeText={setEditableTax}
+              keyboardType="numeric"
+            />
+            <View className="flex-row w-full">
+              <TouchableOpacity
+                className="bg-slate-500 p-3 rounded-lg items-center flex-1 mr-1"
+                onPress={() => setTaxModalVisible(false)}
+              >
+                <Text className="text-white text-base font-bold">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="bg-blue-500 p-3 rounded-lg items-center flex-1 ml-1"
+                onPress={handleSaveTax}
+              >
+                <Text className="text-white text-base font-bold">Save Tax</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={serviceModalVisible}
+        onRequestClose={() => setServiceModalVisible(false)}
+      >
+        <View className="flex-1 justify-center items-center bg-black/50">
+          <View className="bg-white p-5 rounded-xl w-4/5 items-center">
+            <Text className="text-xl font-bold mb-4">Edit Service Charge</Text>
+
+            <View className="flex-row justify-around w-full mb-4">
+              <TouchableOpacity
+                className={`p-2 border-b-2 ${
+                  serviceType === "fixed"
+                    ? "border-blue-500"
+                    : "border-transparent"
+                }`}
+                onPress={() => setServiceType("fixed")}
+              >
+                <Text
+                  className={`${
+                    serviceType === "fixed" ? "text-blue-500" : "text-slate-600"
+                  }`}
+                >
+                  Fixed Amount
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className={`p-2 border-b-2 ${
+                  serviceType === "percentage"
+                    ? "border-blue-500"
+                    : "border-transparent"
+                }`}
+                onPress={() => setServiceType("percentage")}
+              >
+                <Text
+                  className={`${
+                    serviceType === "percentage"
+                      ? "text-blue-500"
+                      : "text-slate-600"
+                  }`}
+                >
+                  Percentage
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View className="flex-row items-center w-full mb-4">
+              <TextInput
+                className="border border-slate-300 rounded-md p-[10px] flex-1 text-base"
+                placeholder={
+                  serviceType === "fixed"
+                    ? "Service Amount"
+                    : "Service Percentage"
+                }
+                value={editableService}
+                onChangeText={setEditableService}
+                keyboardType="numeric"
+              />
+              {serviceType === "percentage" && (
+                <Text className="text-xl ml-2">%</Text>
+              )}
+            </View>
+
+            <View className="flex-row w-full">
+              <TouchableOpacity
+                className="bg-slate-500 p-3 rounded-lg items-center flex-1 mr-1"
+                onPress={() => setServiceModalVisible(false)}
+              >
+                <Text className="text-white text-base font-bold">Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="bg-blue-500 p-3 rounded-lg items-center flex-1 ml-1"
+                onPress={handleSaveService}
+              >
+                <Text className="text-white text-base font-bold">
+                  Save Service
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
