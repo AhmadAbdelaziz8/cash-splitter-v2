@@ -1,4 +1,3 @@
-// import { Image } from "expo-image";
 import { router } from "expo-router";
 import { View, Text, TouchableOpacity } from "react-native";
 import { ThemedText } from "@/components/ThemedText";

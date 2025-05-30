@@ -13,9 +13,7 @@ import { ReceiptProvider } from "@/contexts/ReceiptContext";
 
 import { useColorScheme } from "@/hooks/useColorScheme";
 
-export {
-  ErrorBoundary,
-} from "expo-router";
+export { ErrorBoundary } from "expo-router";
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -24,7 +22,6 @@ export default function RootLayout() {
   });
 
   if (!loaded) {
-    // Async font loading only occurs in development.
     return null;
   }
 

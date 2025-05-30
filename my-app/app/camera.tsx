@@ -4,7 +4,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Alert,
   Linking,
   Platform,
@@ -18,61 +17,6 @@ import { CameraView, useCameraPermissions, CameraType } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useReceipt } from "@/contexts/ReceiptContext";
-
-const styles = StyleSheet.create({
-  cameraContainer: {
-    flex: 1,
-    backgroundColor: "#f3f4f6",
-  },
-  camera: {
-    flex: 1,
-  },
-  topOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1,
-  },
-  topControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-  },
-  controlButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    padding: 8,
-    borderRadius: 24,
-  },
-  bottomOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingVertical: 40,
-    paddingHorizontal: 16,
-    zIndex: 1,
-  },
-  bottomControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  captureButton: {
-    backgroundColor: "#38bdf8",
-    padding: 4,
-    borderRadius: 40,
-    borderWidth: 4,
-    borderColor: "white",
-  },
-  captureButtonInner: {
-    height: 64,
-    width: 64,
-    borderRadius: 32,
-    backgroundColor: "#0ea5e9",
-  },
-});
 
 export default function CameraScreen() {
   const insets = useSafeAreaInsets();
@@ -98,7 +42,6 @@ export default function CameraScreen() {
     checkAndRequestPermission();
   }, [permission]);
 
-  // Separate function to handle permission request
   const requestCameraPermission = async () => {
     try {
       const result = await requestPermission();
@@ -148,20 +91,17 @@ export default function CameraScreen() {
     }
 
     try {
-      // Add a small delay to ensure camera is fully ready
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.7, // Reduced quality for better mobile performance
+        quality: 0.7,
         skipProcessing: false,
         base64: false,
-        exif: false, // Disable EXIF data to reduce file size
+        exif: false,
       });
 
       if (photo?.uri) {
-        // Validate that the URI exists and is accessible
         if (Platform.OS === "android" && !photo.uri.startsWith("file://")) {
-          // On some Android devices, we need to ensure proper file URI format
           const formattedUri = photo.uri.startsWith("/")
             ? `file://${photo.uri}`
             : photo.uri;
@@ -184,7 +124,6 @@ export default function CameraScreen() {
     } catch (error) {
       console.error("Failed to take picture:", error);
 
-      // Provide more specific error messages
       let errorMessage = "Unknown error occurred";
       if (error instanceof Error) {
         if (error.message.includes("Camera is not running")) {
@@ -211,7 +150,6 @@ export default function CameraScreen() {
 
   const handleSelectFromGallery = async () => {
     try {
-      // Request media library permissions
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -247,7 +185,6 @@ export default function CameraScreen() {
   };
 
   if (!permission) {
-    // Camera permissions are still loading.
     return (
       <View className="flex-1 justify-center items-center bg-gray-50">
         <Text className="text-gray-800">Loading camera permissions...</Text>
@@ -256,7 +193,6 @@ export default function CameraScreen() {
   }
 
   if (!permission.granted) {
-    // Camera permissions are not granted yet.
     return (
       <View className="flex-1 justify-center items-center p-4 bg-gray-50">
         <Text className="text-lg mb-4 text-center text-gray-800">
@@ -286,10 +222,10 @@ export default function CameraScreen() {
   }
 
   return (
-    <View style={styles.cameraContainer}>
+    <View className="flex-1 bg-slate-100">
       <CameraView
         ref={cameraRef}
-        style={styles.camera}
+        className="flex-1"
         facing={facing}
         onCameraReady={handleCameraReady}
         autofocus="on"
@@ -305,17 +241,20 @@ export default function CameraScreen() {
           );
         }}
       >
-        <View style={[styles.topOverlay, { paddingTop: insets.top }]}>
+        <View
+          className="absolute top-0 left-0 right-0 z-10"
+          style={{ paddingTop: insets.top }}
+        >
           <SafeAreaView>
-            <View style={styles.topControls}>
+            <View className="flex-row items-center justify-between p-4">
               <TouchableOpacity
-                style={styles.controlButton}
+                className="bg-white/80 p-2 rounded-full"
                 onPress={() => router.back()}
               >
                 <Ionicons name="arrow-back" size={28} color="#374151" />
               </TouchableOpacity>
               <TouchableOpacity
-                style={styles.controlButton}
+                className="bg-white/80 p-2 rounded-full"
                 onPress={toggleCameraFacing}
               >
                 <Ionicons name="camera-reverse" size={28} color="#374151" />
@@ -325,28 +264,28 @@ export default function CameraScreen() {
         </View>
 
         <View
-          style={[
-            styles.bottomOverlay,
-            { paddingBottom: insets.bottom > 0 ? insets.bottom : 20 },
-          ]}
+          className="absolute bottom-0 left-0 right-0 px-4 pt-10 z-10"
+          style={{
+            paddingBottom: insets.bottom > 0 ? insets.bottom : 20,
+          }}
         >
-          <View style={styles.bottomControls}>
+          <View className="flex-row items-center justify-between">
             <TouchableOpacity
-              style={styles.controlButton}
+              className="bg-white/80 p-2 rounded-full"
               onPress={handleSelectFromGallery}
             >
               <Ionicons name="images" size={28} color="#374151" />
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.captureButton}
+              className="bg-sky-400 p-1 rounded-full border-4 border-white"
               onPress={handleCapturePhoto}
               disabled={!isCameraReady}
             >
-              <View style={styles.captureButtonInner} />
+              <View className="h-16 w-16 rounded-full bg-sky-500" />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.controlButton}>
+            <TouchableOpacity className="bg-white/80 p-2 rounded-full">
               <Ionicons name="flash-off" size={28} color="#374151" />
             </TouchableOpacity>
           </View>

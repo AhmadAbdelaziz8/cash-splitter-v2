@@ -21,7 +21,6 @@ const EditItemsScreen: React.FC = () => {
     toggleUserItemSelection,
     userSelectedItemIds,
     generateShareableLink,
-    setProcessedReceiptData,
     receiptTotal,
     receiptTax,
     receiptService,
@@ -72,7 +71,7 @@ const EditItemsScreen: React.FC = () => {
 
   const handleFinalize = () => {
     generateShareableLink();
-    router.push("/ShareLinkScreen"); // Navigate to the new share screen
+    router.push("/ShareLinkScreen");
   };
 
   const renderItemRow = ({ item }: { item: ReceiptItem }) => (
@@ -193,7 +192,7 @@ const EditItemsScreen: React.FC = () => {
         <TouchableOpacity
           className="bg-green-500 p-3 rounded-lg items-center flex-1 ml-2 disabled:opacity-50"
           onPress={handleFinalize}
-          disabled={items.length === 0 || userSelectedItemIds.length === 0} // Also disable if no items are selected for the subtotal
+          disabled={items.length === 0 || userSelectedItemIds.length === 0}
         >
           <Text className="text-white text-base font-bold">
             Finalize & Get Link

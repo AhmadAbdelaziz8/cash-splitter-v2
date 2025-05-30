@@ -4,65 +4,12 @@ import {
   Text,
   TouchableOpacity,
   Share,
-  StyleSheet,
   Alert,
   ScrollView,
 } from "react-native";
 import { useReceipt } from "@/contexts/ReceiptContext";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-
-// Basic styling - can be replaced with NativeWind classes later
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f8f9fa",
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "bold",
-    marginBottom: 20,
-    textAlign: "center",
-    color: "#343a40",
-  },
-  linkContainer: {
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#dee2e6",
-    marginBottom: 20,
-    width: "100%",
-  },
-  linkText: {
-    fontSize: 16,
-    color: "#007bff",
-    textAlign: "center",
-  },
-  button: {
-    backgroundColor: "#28a745",
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-    width: "100%",
-    marginBottom: 12,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginLeft: 10,
-  },
-  secondaryButton: {
-    backgroundColor: "#6c757d",
-  },
-});
 
 const ShareLinkScreen: React.FC = () => {
   const { shareableLink, resetState } = useReceipt();
@@ -74,8 +21,8 @@ const ShareLinkScreen: React.FC = () => {
     }
     try {
       await Share.share({
-        message: `Here's the bill to split: ${shareableLink}`,
-        url: shareableLink, // For some platforms
+        message: `Here\'s the bill to split: ${shareableLink}`,
+        url: shareableLink,
         title: "Split Bill",
       });
     } catch (error) {
@@ -84,71 +31,65 @@ const ShareLinkScreen: React.FC = () => {
   };
 
   const handleDone = () => {
-    resetState(); // Clear receipt context
-    router.replace("/(tabs)/"); // Navigate to home screen
+    resetState();
+    router.replace("/(tabs)/");
   };
 
   if (!shareableLink) {
-    // Should not happen if navigation is correct, but as a fallback
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>No Link Available</Text>
+      <View className="flex-1 p-5 justify-center items-center bg-slate-50">
+        <Text className="text-2xl font-bold mb-5 text-center text-slate-700">No Link Available</Text>
         <Text
-          style={{ textAlign: "center", marginBottom: 20, color: "#6c757d" }}
+          className="text-center mb-5 text-slate-500"
         >
           Something went wrong, and the shareable link could not be generated.
         </Text>
         <TouchableOpacity
-          style={[styles.button, styles.secondaryButton]}
+          className="bg-slate-500 py-3 px-5 rounded-lg items-center flex-row justify-center w-full mb-3"
           onPress={handleDone}
         >
           <Ionicons name="home-outline" size={20} color="#fff" />
-          <Text style={styles.buttonText}>Back to Home</Text>
+          <Text className="text-white text-base font-bold ml-2">Back to Home</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1 p-5 justify-center items-center bg-slate-50">
       <Ionicons
         name="checkmark-circle-outline"
         size={60}
         color="#28a745"
-        style={{ marginBottom: 15 }}
+        className="mb-4"
       />
-      <Text style={styles.title}>Link Generated Successfully!</Text>
+      <Text className="text-2xl font-bold mb-5 text-center text-slate-700">Link Generated Successfully!</Text>
 
       <Text
-        style={{
-          fontSize: 16,
-          color: "#495057",
-          textAlign: "center",
-          marginBottom: 10,
-        }}
+        className="text-base text-slate-600 text-center mb-2"
       >
         Share this link with your friends:
       </Text>
 
-      <View style={styles.linkContainer}>
+      <View className="bg-white p-4 rounded-lg border border-slate-300 mb-5 w-full">
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <Text selectable={true} style={styles.linkText}>
+          <Text selectable={true} className="text-base text-blue-500 text-center">
             {shareableLink}
           </Text>
         </ScrollView>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleShare}>
+      <TouchableOpacity className="bg-green-500 py-3 px-5 rounded-lg items-center flex-row justify-center w-full mb-3" onPress={handleShare}>
         <Ionicons name="share-social-outline" size={20} color="#fff" />
-        <Text style={styles.buttonText}>Share Link</Text>
+        <Text className="text-white text-base font-bold ml-2">Share Link</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.button, styles.secondaryButton]}
+        className="bg-slate-500 py-3 px-5 rounded-lg items-center flex-row justify-center w-full mb-3"
         onPress={handleDone}
       >
         <Ionicons name="home-outline" size={20} color="#fff" />
-        <Text style={styles.buttonText}>Done (Back to Home)</Text>
+        <Text className="text-white text-base font-bold ml-2">Done (Back to Home)</Text>
       </TouchableOpacity>
     </View>
   );
