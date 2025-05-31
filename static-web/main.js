@@ -324,42 +324,103 @@ function updateOverallSummary() {
 }
 
 function parseURLParameters() {
-  const params = new URLSearchParams(window.location.search);
-  const itemsParam = params.get("items");
-  const taxParam = params.get("tax");
-  const serviceParam = params.get("service");
+  let itemsFromUrl = [];
+  let taxFromUrl = null;
+  let serviceFromUrl = null;
 
-  if (itemsParam) {
+  const hash = window.location.hash;
+  if (hash && hash.startsWith("#data=")) {
+    const encodedData = hash.substring(6);
     try {
-      const parsedItems = JSON.parse(decodeURIComponent(itemsParam));
-      if (Array.isArray(parsedItems)) {
-        receiptData = parsedItems.map((item) => ({
-          name: item.name || "Unnamed Item",
-          price: parseFloat(item.price) || 0,
-          quantity: parseInt(item.quantity, 10) || 1,
-          id: item.id || `item-${Math.random().toString(36).substr(2, 9)}`,
-        }));
-      } else {
-        receiptData = [];
+      const decodedData = decodeURIComponent(encodedData);
+      const parsedDataObject = JSON.parse(decodedData);
+
+      if (parsedDataObject && typeof parsedDataObject === "object") {
+        if (Array.isArray(parsedDataObject.items)) {
+          itemsFromUrl = parsedDataObject.items.map((item) => ({
+            name: item.name || "Unnamed Item",
+            price: parseFloat(item.price) || 0,
+            quantity: parseInt(item.quantity, 10) || 1,
+            id: item.id || `item-${Math.random().toString(36).substr(2, 9)}`,
+          }));
+        }
+        if (parsedDataObject.tax !== undefined) {
+          taxFromUrl = parsedDataObject.tax;
+        }
+        if (parsedDataObject.service !== undefined) {
+          serviceFromUrl = parsedDataObject.service;
+        }
       }
     } catch (error) {
-      receiptData = [];
+      console.error("Error parsing data from URL hash:", error);
     }
-  } else {
-    receiptData = [];
   }
 
-  const parsedTax = parseFloat(taxParam);
+  if (itemsFromUrl.length === 0) {
+    const params = new URLSearchParams(window.location.search);
+    const itemsParam = params.get("items");
+    const taxParam = params.get("tax");
+    const serviceParam = params.get("service");
 
-  if (serviceParam) {
-    if (serviceParam.includes("%")) {
-      receiptServiceCharge = serviceParam;
+    if (itemsParam) {
+      try {
+        const parsedItemsQuery = JSON.parse(decodeURIComponent(itemsParam));
+        if (Array.isArray(parsedItemsQuery)) {
+          itemsFromUrl = parsedItemsQuery.map((item) => ({
+            name: item.name || "Unnamed Item",
+            price: parseFloat(item.price) || 0,
+            quantity: parseInt(item.quantity, 10) || 1,
+            id: item.id || `item-${Math.random().toString(36).substr(2, 9)}`,
+          }));
+        }
+      } catch (error) {
+        console.error("Error parsing items from URL query parameters:", error);
+      }
+    }
+    if (taxFromUrl === null && taxParam !== null)
+      taxFromUrl = parseFloat(taxParam);
+    if (serviceFromUrl === null && serviceParam !== null) {
+      const fixedServiceQuery = parseFloat(serviceParam);
+      if (serviceParam.includes("%")) {
+        serviceFromUrl = serviceParam;
+      } else if (!isNaN(fixedServiceQuery)) {
+        serviceFromUrl = fixedServiceQuery;
+      } else {
+        serviceFromUrl = null;
+      }
+    }
+  }
+
+  receiptData = itemsFromUrl;
+
+  const currentOverallSubtotal = receiptData.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
+
+  if (taxFromUrl !== null && !isNaN(parseFloat(taxFromUrl))) {
+    const numericTax = parseFloat(taxFromUrl);
+    if (numericTax > 0 && currentOverallSubtotal > 0) {
+      receiptTaxRate = numericTax / currentOverallSubtotal;
+    } else {
+      receiptTaxRate = 0;
+    }
+  } else {
+    receiptTaxRate = 0;
+  }
+
+  if (serviceFromUrl !== null) {
+    if (typeof serviceFromUrl === "string" && serviceFromUrl.includes("%")) {
+      receiptServiceCharge = serviceFromUrl;
       if (peopleInputContainer) peopleInputContainer.style.display = "none";
     } else {
-      const fixedService = parseFloat(serviceParam);
-      if (!isNaN(fixedService) && fixedService > 0) {
+      const fixedService = parseFloat(serviceFromUrl.toString());
+      if (!isNaN(fixedService) && fixedService >= 0) {
         receiptServiceCharge = fixedService;
-        if (peopleInputContainer) peopleInputContainer.style.display = "block";
+        if (peopleInputContainer && fixedService > 0)
+          peopleInputContainer.style.display = "block";
+        else if (peopleInputContainer)
+          peopleInputContainer.style.display = "none";
       } else {
         receiptServiceCharge = null;
         if (peopleInputContainer) peopleInputContainer.style.display = "none";
@@ -368,19 +429,6 @@ function parseURLParameters() {
   } else {
     receiptServiceCharge = null;
     if (peopleInputContainer) peopleInputContainer.style.display = "none";
-  }
-
-  const currentOverallSubtotal = receiptData.reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0
-  );
-
-  if (!isNaN(parsedTax) && parsedTax > 0 && currentOverallSubtotal > 0) {
-    receiptTaxRate = parsedTax / currentOverallSubtotal;
-  } else if (!isNaN(parsedTax) && parsedTax === 0) {
-    receiptTaxRate = 0;
-  } else {
-    receiptTaxRate = 0;
   }
 
   displayReceiptItems(receiptData);
