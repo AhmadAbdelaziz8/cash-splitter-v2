@@ -10,6 +10,7 @@ import {
   ParsedReceiptData as GeminiParsedReceiptData,
   ReceiptItem as GeminiReceiptItem,
 } from "@/config/geminiConfig"; // For type clarity
+import { receiptService as apiReceiptService } from "@/services/receiptService"; // Aliased import
 
 // Define interface for receipt items (now includes quantity)
 export interface ReceiptItem {
@@ -26,11 +27,13 @@ interface ReceiptContextType {
   items: ReceiptItem[];
   receiptTotal: number; // This will now be the dynamically calculated grand total
   receiptTax: number | null;
-  receiptService: number | string | null; // Updated type
+  serviceChargeValue: number | string | null; // Renamed from receiptService
   originalReceiptTotal: number | null; // Store the total as parsed from the receipt by LLM
   userSelectedItemIds: string[];
   userSubtotal: number;
   shareableLink: string | null;
+  isProcessing: boolean; // New state
+  processingError: string | null; // New state
   setImageUri: (uri: string | null) => void;
   setImageBase64: (base64: string | null) => void;
   // setItems: (items: ReceiptItem[]) => void; // Replaced by setProcessedReceiptData for initial load
@@ -42,8 +45,9 @@ interface ReceiptContextType {
   deleteItem: (id: string) => void;
   toggleUserItemSelection: (id: string) => void;
   updateReceiptTax: (newTax: number | null) => void; // New mutator
-  updateReceiptService: (newService: number | string | null) => void; // New mutator
+  updateServiceChargeValue: (newService: number | string | null) => void; // Renamed from updateReceiptService
   generateShareableLink: () => void;
+  processReceiptImage: (imageBase64: string) => Promise<void>; // New async function
   resetState: () => void;
 }
 
@@ -62,12 +66,14 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     number | null
   >(null); // From LLM
   const [receiptTax, setReceiptTax] = useState<number | null>(null);
-  const [receiptService, setReceiptService] = useState<number | string | null>(
-    null
-  ); // Updated type
+  const [serviceChargeValue, setServiceChargeValue] = useState<
+    number | string | null
+  >(null); // Renamed state variable
   const [userSelectedItemIds, setUserSelectedItemIds] = useState<string[]>([]);
   const [userSubtotal, setUserSubtotal] = useState<number>(0);
   const [shareableLink, setShareableLink] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false); // New state
+  const [processingError, setProcessingError] = useState<string | null>(null); // New state
 
   const setProcessedReceiptData = (data: GeminiParsedReceiptData) => {
     const newItems = data.items.map((item: GeminiReceiptItem) => ({
@@ -82,8 +88,70 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     setReceiptTax(data.tax ?? null);
     // For service, if it's a number string from LLM (but not percentage), geminiConfig validation might have converted it.
     // If it's a percentage string (e.g., "10%"), it remains a string.
-    setReceiptService(data.service ?? null);
+    setServiceChargeValue(data.service ?? null);
     setUserSelectedItemIds([]); // Clear selections when new receipt is processed
+  };
+
+  const processReceiptImage = async (imgBase64: string) => {
+    if (!imgBase64) {
+      setProcessingError("No image data provided for processing.");
+      return;
+    }
+    setIsProcessing(true);
+    setProcessingError(null);
+    try {
+      console.log(
+        "[ReceiptContext] processReceiptImage: Calling apiReceiptService.parseReceiptImage"
+      );
+      const result = await apiReceiptService.parseReceiptImage(imgBase64);
+      console.log(
+        "[ReceiptContext] processReceiptImage: API Result:",
+        JSON.stringify(result)
+      );
+      if (result.success && result.data) {
+        setProcessedReceiptData(result.data);
+        console.log(
+          "[ReceiptContext] processReceiptImage: Data processed successfully."
+        );
+      } else {
+        // Handle API error, but potentially still set mock data if provided
+        setProcessingError(result.error || "Failed to process receipt.");
+        console.warn(
+          "[ReceiptContext] processReceiptImage: Error - ",
+          result.error
+        );
+        if (result.data) {
+          // If API returned error but also mock data
+          setProcessedReceiptData(result.data);
+        } else {
+          // If critical error and no fallback data from API, clear existing (or set empty)
+          setItems([]);
+          setOriginalReceiptTotal(null);
+          setReceiptTax(null);
+          setServiceChargeValue(null);
+        }
+      }
+    } catch (error) {
+      console.error(
+        "[ReceiptContext] processReceiptImage: CATCH block error:",
+        error
+      );
+      const message =
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred.";
+      setProcessingError(message);
+      // Clear data on critical catch
+      setItems([]);
+      setOriginalReceiptTotal(null);
+      setReceiptTax(null);
+      setServiceChargeValue(null);
+    } finally {
+      setIsProcessing(false);
+      console.log(
+        "[ReceiptContext] processReceiptImage: setIsProcessing(false)."
+      );
+    }
   };
 
   const addItem = (
@@ -125,8 +193,8 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     setReceiptTax(newTax);
   };
 
-  const updateReceiptService = (newService: number | string | null) => {
-    setReceiptService(newService);
+  const updateServiceChargeValue = (newService: number | string | null) => {
+    setServiceChargeValue(newService);
   };
 
   // Effect to calculate user subtotal
@@ -150,10 +218,10 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     const currentTax = receiptTax ?? 0;
     let currentServiceAmount = 0;
 
-    if (typeof receiptService === "number") {
-      currentServiceAmount = receiptService;
-    } else if (typeof receiptService === "string") {
-      const percentageMatch = receiptService.match(/^(\d*\.?\d+)%$/);
+    if (typeof serviceChargeValue === "number") {
+      currentServiceAmount = serviceChargeValue;
+    } else if (typeof serviceChargeValue === "string") {
+      const percentageMatch = serviceChargeValue.match(/^(\d*\.?\d+)%$/);
       if (percentageMatch && percentageMatch[1]) {
         const percentage = parseFloat(percentageMatch[1]);
         if (!isNaN(percentage)) {
@@ -162,7 +230,7 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
       }
     }
     setReceiptTotal(itemsSubtotal + currentTax + currentServiceAmount);
-  }, [items, receiptTax, receiptService]);
+  }, [items, receiptTax, serviceChargeValue]);
 
   const generateShareableLink = () => {
     const staticSiteBaseUrl = WEB_SHARING.BASE_URL;
@@ -176,7 +244,7 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
       items: itemsForLink,
       total: receiptTotal, // This is now the calculated total
       tax: receiptTax,
-      service: receiptService, // Share service as number or string "10%"
+      service: serviceChargeValue, // Share service as number or string "10%"
       originalTotal: originalReceiptTotal, // Optionally share the original parsed total
     };
     const dataString = JSON.stringify(shareData);
@@ -192,9 +260,11 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     setReceiptTotal(0);
     setOriginalReceiptTotal(null);
     setReceiptTax(null);
-    setReceiptService(null);
+    setServiceChargeValue(null);
     setUserSelectedItemIds([]);
     setShareableLink(null);
+    setIsProcessing(false); // Reset new state
+    setProcessingError(null); // Reset new state
   };
 
   return (
@@ -205,11 +275,13 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         items,
         receiptTotal, // Calculated grand total
         receiptTax,
-        receiptService,
+        serviceChargeValue,
         originalReceiptTotal, // LLM parsed total
         userSelectedItemIds,
         userSubtotal,
         shareableLink,
+        isProcessing, // Expose new state
+        processingError, // Expose new state
         setImageUri,
         setImageBase64,
         setProcessedReceiptData, // Changed from setItems
@@ -218,8 +290,9 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         deleteItem,
         toggleUserItemSelection,
         updateReceiptTax,
-        updateReceiptService,
+        updateServiceChargeValue,
         generateShareableLink,
+        processReceiptImage, // Expose new function
         resetState,
       }}
     >

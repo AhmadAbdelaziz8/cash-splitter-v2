@@ -38,9 +38,9 @@ export default function PreviewScreen() {
       const processedImage = await parseImage(imageUri);
       setImageBase64(processedImage);
 
-      router.push("/processing");
+      router.push("/EditItemsScreen");
     } catch (error) {
-      console.error("Error processing image:", error);
+      console.error("Error processing image in PreviewScreen:", error);
       Alert.alert(
         "Error",
         `Failed to process image: ${
@@ -68,7 +68,6 @@ export default function PreviewScreen() {
                 accessibilityLabel="Preview of captured receipt"
               />
             </View>
-        
           </View>
         ) : (
           <View className="flex-1 justify-center items-center">

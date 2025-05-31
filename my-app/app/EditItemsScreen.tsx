@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Modal,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { useReceipt, ReceiptItem } from "@/contexts/ReceiptContext";
 import { router } from "expo-router";
@@ -23,10 +24,15 @@ const EditItemsScreen: React.FC = () => {
     generateShareableLink,
     receiptTotal,
     receiptTax,
-    receiptService,
+    serviceChargeValue,
     originalReceiptTotal,
     updateReceiptTax,
-    updateReceiptService,
+    updateServiceChargeValue,
+    imageBase64,
+    isProcessing,
+    processingError,
+    processReceiptImage,
+    resetState,
   } = useReceipt();
 
   const [itemModalVisible, setItemModalVisible] = useState(false);
@@ -43,6 +49,39 @@ const EditItemsScreen: React.FC = () => {
   const [serviceType, setServiceType] = useState<"fixed" | "percentage">(
     "fixed"
   );
+  const [initialLoadAttempted, setInitialLoadAttempted] = useState(false);
+
+  useEffect(() => {
+    console.log("[EditItemsScreen] Mount/update. imageBase64:",!!imageBase64, "isProcessing:", isProcessing, "items.length:", items.length, "initialLoadAttempted:", initialLoadAttempted);
+    if (imageBase64 && !isProcessing && !initialLoadAttempted) {
+      console.log("[EditItemsScreen] Conditions met, calling processReceiptImage.");
+      setInitialLoadAttempted(true);
+      processReceiptImage(imageBase64).catch(error => {
+        console.error("[EditItemsScreen] Error from processReceiptImage call:", error);
+      });
+    } else if (!imageBase64 && !isProcessing && !initialLoadAttempted) {
+      console.log("[EditItemsScreen] No imageBase64, not processing, and no initial load attempt. Navigating to camera.");
+      Alert.alert("No Receipt Image", "Please select or capture a receipt image first.", [
+        { text: "OK", onPress: () => router.replace("/camera") }
+      ]);
+    }
+  }, [imageBase64, isProcessing, items, processReceiptImage, initialLoadAttempted]);
+
+  useEffect(() => {
+    if (processingError) {
+      console.error("[EditItemsScreen] Processing error from context:", processingError);
+      Alert.alert("Processing Failed", processingError, [
+        {
+          text: "Try Again",
+          onPress: () => {
+            setInitialLoadAttempted(false);
+            router.replace("/camera");
+          },
+        },
+        { text: "Cancel", style: "cancel", onPress: () => router.replace("/camera") },
+      ]);
+    }
+  }, [processingError, router]);
 
   const openItemModalToAdd = () => {
     setCurrentItem(null);
@@ -120,12 +159,15 @@ const EditItemsScreen: React.FC = () => {
   };
 
   const openServiceModal = () => {
-    if (typeof receiptService === "string" && receiptService.includes("%")) {
+    if (
+      typeof serviceChargeValue === "string" &&
+      serviceChargeValue.includes("%")
+    ) {
       setServiceType("percentage");
-      setEditableService(parseFloat(receiptService).toString() || "0");
+      setEditableService(parseFloat(serviceChargeValue).toString() || "0");
     } else {
       setServiceType("fixed");
-      setEditableService((receiptService as number)?.toString() ?? "0");
+      setEditableService((serviceChargeValue as number)?.toString() ?? "0");
     }
     setServiceModalVisible(true);
   };
@@ -141,9 +183,9 @@ const EditItemsScreen: React.FC = () => {
     }
 
     if (serviceType === "percentage") {
-      updateReceiptService(serviceValue > 0 ? `${serviceValue}%` : null);
+      updateServiceChargeValue(serviceValue > 0 ? `${serviceValue}%` : null);
     } else {
-      updateReceiptService(serviceValue > 0 ? serviceValue : null);
+      updateServiceChargeValue(serviceValue > 0 ? serviceValue : null);
     }
     setServiceModalVisible(false);
   };
@@ -205,17 +247,17 @@ const EditItemsScreen: React.FC = () => {
     let serviceDisplayAmount = 0;
     let serviceDisplayText = "Service:";
 
-    if (typeof receiptService === "number") {
-      serviceDisplayAmount = receiptService;
+    if (typeof serviceChargeValue === "number") {
+      serviceDisplayAmount = serviceChargeValue;
       serviceDisplayText = "Service (Fixed):";
     } else if (
-      typeof receiptService === "string" &&
-      receiptService.includes("%")
+      typeof serviceChargeValue === "string" &&
+      serviceChargeValue.includes("%")
     ) {
-      const percentage = parseFloat(receiptService);
+      const percentage = parseFloat(serviceChargeValue);
       if (!isNaN(percentage)) {
         serviceDisplayAmount = (percentage / 100) * currentItemsSubtotal;
-        serviceDisplayText = `Service (${receiptService}):`;
+        serviceDisplayText = `Service (${serviceChargeValue}):`;
       }
     }
 
@@ -283,6 +325,20 @@ const EditItemsScreen: React.FC = () => {
     );
   };
 
+  if (isProcessing || (!initialLoadAttempted && imageBase64)) {
+    return (
+      <View className="flex-1 justify-center items-center p-5 bg-slate-50">
+        <ActivityIndicator size="large" color="#38bdf8" className="mb-5" />
+        <Text className="text-xl font-semibold text-slate-700">
+          Processing Your Receipt...
+        </Text>
+        <Text className="text-base text-slate-500 mt-2">
+           This will just take a moment.
+        </Text>
+      </View>
+    );
+  }
+  
   return (
     <View className="flex-1 p-4 bg-slate-50">
       <Text className="text-2xl font-bold mb-4 text-slate-700">
