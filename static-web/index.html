@@ -38,11 +38,31 @@
           </button>
         </div>
 
-        <!-- Item List Container (Populated by JS) -->
+        <div
+          id="people-input-container"
+          class="people-input-container"
+          style="display: none"
+        >
+          <label for="number-of-people"
+            >Number of People (for fixed service):</label
+          >
+          <input
+            type="number"
+            id="number-of-people"
+            name="number-of-people"
+            value="1"
+            min="1"
+            class="people-input"
+          />
+        </div>
+
+        <div id="receipt-items-container" class="receipt-items-container"></div>
 
         <div id="user-total" class="user-total-container">
           <!-- Content will be populated by JavaScript -->
         </div>
+
+        <div id="overall-summary" class="overall-summary-container"></div>
       </section>
     </div>
     <script src="main.js"></script>

@@ -23,7 +23,6 @@ h1 {
   margin-bottom: 20px;
 }
 
-
 #content {
   padding: 20px;
   text-align: center;
@@ -105,7 +104,7 @@ h1 {
 .receipt-price {
   background: none;
   color: #1f2937;
-  padding: 4px 0; 
+  padding: 4px 0;
   border-radius: 0;
   font-weight: 500;
   text-align: right;
@@ -532,3 +531,122 @@ h1 {
 
 /* Removed .calculate-button and other specific button styles not in index.html anymore */
 /* Removed #loading-indicator specific styles as they are not in the current HTML */
+
+/* Styles for Number of People Input */
+.people-input-container {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.people-input-container label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.people-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.people-input:focus {
+  border-color: #0ea5e9;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+}
+
+/* Styles for Summary Sections (Your Share and Overall Bill) */
+.summary-title {
+  color: #0ea5e9;
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.user-total-container,
+.overall-summary-container {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.overall-summary-container {
+  margin-bottom: 20px;
+}
+
+.summary-total {
+  font-size: 28px;
+  font-weight: bold;
+  color: #059669;
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+.summary-breakdown {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.summary-item-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  margin: 3px 0;
+  font-size: 14px;
+  color: #4b5563;
+}
+
+.summary-item .amount {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.summary-note {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.summary-divider {
+  border: none;
+  height: 1px;
+  background-color: #e5e7eb;
+  margin: 10px 0;
+}
+
+.summary-item.total-grand {
+  font-size: 16px;
+  font-weight: bold;
+  color: #111827;
+}
+.summary-item.total-grand .amount {
+  font-size: 18px;
+  color: #059669;
+}
+
+/* Clean up old user-total styles potentially conflicting */
+#user-total h3,
+#user-total div,
+#user-total p {
+  all: unset;
+}

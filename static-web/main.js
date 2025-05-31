@@ -1,53 +1,59 @@
 const CONFIG = {
   DEFAULT_PEOPLE_COUNT: 1,
   MIN_PEOPLE_COUNT: 1,
-
-  PRECISION: 2, // For decimal places only
+  PRECISION: 2,
   NOTIFICATION_DURATION: 2000,
   COLORS: {
     SELECTED: "#059669",
     UNSELECTED: "#6b7280",
-    BACKGROUND_GRADIENT: "linear-gradient(135deg, #ecfdf5, #d1fae5)",
-    BORDER: "#10b981",
     TEXT_DARK: "#065f46",
   },
 };
 
-// Receives a number, returns a string formatted to N decimal places
+let receiptData = [];
+let receiptTaxRate = 0;
+let receiptServiceCharge = null;
+let numberOfPeopleForFixedService = CONFIG.DEFAULT_PEOPLE_COUNT;
+
+const peopleInputContainer = document.getElementById("people-input-container");
+const numberOfPeopleInput = document.getElementById("number-of-people");
+const overallSummaryDiv = document.getElementById("overall-summary");
+const userTotalDiv = document.getElementById("user-total");
+const receiptItemsContainer = document.getElementById(
+  "receipt-items-container"
+);
+
 function formatAmount(amount) {
   if (typeof amount !== "number" || isNaN(amount)) {
-    console.warn("formatAmount received invalid amount:", amount);
-    return (0).toFixed(CONFIG.PRECISION); // Default to 0.00 if invalid
+    return (0).toFixed(CONFIG.PRECISION);
   }
   return amount.toFixed(CONFIG.PRECISION);
 }
 
-// item: { name: string, price: number }
 function createReceiptTile(item, index) {
   const tile = document.createElement("div");
   tile.className = "receipt-container";
-  tile.dataset.index = index; // Add index to tile for easier checkbox targeting
+  tile.dataset.index = index;
+  tile.dataset.itemId = item.id;
 
   const checkboxContainer = document.createElement("div");
   checkboxContainer.className = "receipt-checkbox";
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
   checkbox.id = `item-${index}`;
-  checkbox.dataset.price = item.price;
+  checkbox.dataset.unitPrice = item.price;
+  checkbox.dataset.quantity = item.quantity;
   checkbox.addEventListener("change", calculateUserTotal);
-  // Prevent tile click from also firing if checkbox is directly clicked
-  checkbox.addEventListener("click", (event) => {
-    event.stopPropagation();
-  });
+  checkbox.addEventListener("click", (event) => event.stopPropagation());
   checkboxContainer.appendChild(checkbox);
 
   const header = document.createElement("div");
   header.className = "receipt-header";
-  header.textContent = item.name;
+  header.textContent = `${item.name} (Qty: ${item.quantity})`;
 
   const priceDisplay = document.createElement("div");
   priceDisplay.className = "receipt-price";
-  priceDisplay.textContent = formatAmount(item.price);
+  priceDisplay.textContent = formatAmount(item.price * item.quantity);
 
   const peopleContainer = document.createElement("div");
   peopleContainer.className = "receipt-people";
@@ -58,7 +64,7 @@ function createReceiptTile(item, index) {
   minusBtn.textContent = "-";
   minusBtn.dataset.index = index;
   minusBtn.addEventListener("click", (event) => {
-    event.stopPropagation(); // Prevent tile click
+    event.stopPropagation();
     let currentCount = parseInt(
       document.getElementById(`people-count-${index}`).textContent || "1"
     );
@@ -81,7 +87,7 @@ function createReceiptTile(item, index) {
   plusBtn.textContent = "+";
   plusBtn.dataset.index = index;
   plusBtn.addEventListener("click", (event) => {
-    event.stopPropagation(); // Prevent tile click
+    event.stopPropagation();
     let currentCount = parseInt(
       document.getElementById(`people-count-${index}`).textContent || "1"
     );
@@ -106,15 +112,10 @@ function createReceiptTile(item, index) {
   tile.appendChild(peopleContainer);
   tile.appendChild(userShareDisplay);
 
-  // Make the whole tile clickable to toggle the checkbox
   tile.addEventListener("click", function () {
-    // 'this' refers to the tile element
     const chk = this.querySelector('.receipt-checkbox input[type="checkbox"]');
     if (chk) {
       chk.checked = !chk.checked;
-      // Manually trigger the change event for the checkbox if other listeners depend on it,
-      // or directly call calculateUserTotal.
-      // For simplicity and since our main listener is already on 'change', let's directly call calculateUserTotal.
       calculateUserTotal();
     }
   });
@@ -123,94 +124,268 @@ function createReceiptTile(item, index) {
 }
 
 function displayReceiptItems(items) {
-  const sectionTitle = document.querySelector(".receipt-section h2");
-  if (!sectionTitle) {
-    console.error("Receipt section title not found. Cannot display items.");
+  if (!receiptItemsContainer) {
     return;
   }
-
-  let container = document.getElementById("receipt-items-container");
-  if (!container) {
-    container = document.createElement("div");
-    container.id = "receipt-items-container";
-    container.className = "receipt-items-container";
-    sectionTitle.insertAdjacentElement("afterend", container);
-  } else {
-    container.innerHTML = ""; // Clear existing items
-  }
+  receiptItemsContainer.innerHTML = "";
 
   if (!items || items.length === 0) {
-    container.innerHTML =
+    receiptItemsContainer.innerHTML =
       '<p class="no-items-message">No items to display. Share a receipt from the app!</p>';
     return;
   }
 
   items.forEach((item, index) => {
     const tile = createReceiptTile(item, index);
-    container.appendChild(tile);
+    receiptItemsContainer.appendChild(tile);
   });
 }
 
 function calculateUserTotal() {
-  let userTotal = 0;
+  let currentUserSubtotal = 0;
+  let currentUserTotalTax = 0;
+  let currentUserTotalPercentageService = 0;
+  let currentUserTotalFixedServicePortion = 0;
 
-  // receiptData should be an array of { name: string, price: number }
-  receiptData.forEach((item, index) => {
+  receiptData.forEach((itemData, index) => {
     const checkbox = document.getElementById(`item-${index}`);
-    const peopleCountDisplay = document.getElementById(`people-count-${index}`);
+    const peopleCountForItemDisplay = document.getElementById(
+      `people-count-${index}`
+    );
     const shareElement = document.getElementById(`share-${index}`);
 
-    if (checkbox && peopleCountDisplay && shareElement) {
-      // item.price is the full price of this single item
-      const itemFullPrice = parseFloat(checkbox.dataset.price); // Get price from dataset
-      if (isNaN(itemFullPrice)) {
-        console.warn(
-          `Item ${index} has invalid price: ${checkbox.dataset.price}`
-        );
+    if (checkbox && peopleCountForItemDisplay && shareElement) {
+      const unitPrice = parseFloat(checkbox.dataset.unitPrice);
+      const quantity = parseInt(checkbox.dataset.quantity, 10);
+      const itemTotalPrice = unitPrice * quantity;
+
+      if (isNaN(unitPrice) || isNaN(quantity)) {
         shareElement.textContent = "Error";
-        return; // Skip this item if price is invalid
+        return;
       }
 
-      // Get peopleCount from the span's textContent
-      const peopleCount = parseInt(peopleCountDisplay.textContent || "1") || 1;
-      const userShareForItem = itemFullPrice / peopleCount;
+      const peopleSharingThisItem =
+        parseInt(peopleCountForItemDisplay.textContent || "1") || 1;
+      const pricePerSharerForItem = itemTotalPrice / peopleSharingThisItem;
+
+      let itemTax = 0;
+      let itemPercentageService = 0;
+
+      if (receiptTaxRate > 0) {
+        itemTax = pricePerSharerForItem * receiptTaxRate;
+      }
+
+      if (
+        receiptServiceCharge &&
+        typeof receiptServiceCharge === "string" &&
+        receiptServiceCharge.includes("%")
+      ) {
+        const servicePercentage = parseFloat(receiptServiceCharge) / 100;
+        if (!isNaN(servicePercentage)) {
+          itemPercentageService = pricePerSharerForItem * servicePercentage;
+        }
+      }
+
+      const userShareForItemDisplay =
+        pricePerSharerForItem + itemTax + itemPercentageService;
 
       if (checkbox.checked) {
-        shareElement.textContent = formatAmount(userShareForItem);
+        shareElement.textContent = formatAmount(userShareForItemDisplay);
         shareElement.style.color = CONFIG.COLORS.SELECTED;
         shareElement.style.fontWeight = "bold";
-        userTotal += userShareForItem;
+
+        currentUserSubtotal += pricePerSharerForItem;
+        currentUserTotalTax += itemTax;
+        currentUserTotalPercentageService += itemPercentageService;
       } else {
-        shareElement.textContent = "0.00";
+        shareElement.textContent = formatAmount(0);
         shareElement.style.color = CONFIG.COLORS.UNSELECTED;
         shareElement.style.fontWeight = "normal";
       }
     }
   });
-  updateTotalDisplay(userTotal);
+
+  if (
+    receiptServiceCharge &&
+    typeof receiptServiceCharge === "number" &&
+    numberOfPeopleForFixedService > 0 &&
+    currentUserSubtotal > 0
+  ) {
+    currentUserTotalFixedServicePortion =
+      receiptServiceCharge / numberOfPeopleForFixedService;
+  }
+
+  const finalUserTotal =
+    currentUserSubtotal +
+    currentUserTotalTax +
+    currentUserTotalPercentageService +
+    currentUserTotalFixedServicePortion;
+  updateTotalDisplay(
+    finalUserTotal,
+    currentUserSubtotal,
+    currentUserTotalTax,
+    currentUserTotalPercentageService,
+    currentUserTotalFixedServicePortion
+  );
 }
 
-function updateTotalDisplay(total) {
-  const totalDiv = document.getElementById("user-total");
-  if (totalDiv) {
-    totalDiv.innerHTML = `
-      <h3 style="color: ${
-        CONFIG.COLORS.TEXT_DARK
-      }; margin: 0 0 10px 0; text-align: center;">💰 Your Total</h3>
-      <div style="font-size: 28px; font-weight: bold; color: ${
-        CONFIG.COLORS.SELECTED
-      }; text-align: center;">
-        ${formatAmount(total)}
+function updateTotalDisplay(
+  total,
+  subtotal,
+  tax,
+  percentService,
+  fixedServicePortion
+) {
+  if (userTotalDiv) {
+    let breakdownHtml = `<p class="summary-item">Subtotal: <span class="amount">${formatAmount(
+      subtotal
+    )}</span></p>`;
+    if (tax > 0) {
+      breakdownHtml += `<p class="summary-item">Tax: <span class="amount">${formatAmount(
+        tax
+      )}</span></p>`;
+    }
+    if (percentService > 0) {
+      breakdownHtml += `<p class="summary-item">Service (Percentage): <span class="amount">${formatAmount(
+        percentService
+      )}</span></p>`;
+    }
+    if (fixedServicePortion > 0) {
+      breakdownHtml += `<p class="summary-item">Service (Fixed Portion): <span class="amount">${formatAmount(
+        fixedServicePortion
+      )}</span></p>`;
+    }
+
+    userTotalDiv.innerHTML = `
+      <h3 class="summary-title">💰 Your Share</h3>
+      <div class="summary-total">${formatAmount(total)}</div>
+      <div class="summary-breakdown">
+        ${breakdownHtml}
       </div>
-      <p style="color: ${
-        CONFIG.COLORS.TEXT_DARK
-      }; margin: 10px 0 0 0; font-size: 14px; text-align: center;">
-        Select items and adjust sharers.
-      </p>
+      <p class="summary-note">Select items and adjust sharers for each item. If service is fixed, set total people sharing it.</p>
     `;
-  } else {
-    console.error("Element with ID 'user-total' not found!"); // Changed from warn to error
   }
+}
+
+function updateOverallSummary() {
+  if (!overallSummaryDiv) {
+    return;
+  }
+
+  const overallSubtotal = receiptData.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
+  let overallTaxAmount = 0;
+  let overallServiceAmount = 0;
+  let serviceDisplayText = "Service:";
+
+  if (receiptTaxRate > 0) {
+    overallTaxAmount = overallSubtotal * receiptTaxRate;
+  }
+
+  if (receiptServiceCharge) {
+    if (
+      typeof receiptServiceCharge === "string" &&
+      receiptServiceCharge.includes("%")
+    ) {
+      const servicePercentage = parseFloat(receiptServiceCharge) / 100;
+      if (!isNaN(servicePercentage)) {
+        overallServiceAmount = overallSubtotal * servicePercentage;
+        serviceDisplayText = `Service (${receiptServiceCharge}):`;
+      }
+    } else if (typeof receiptServiceCharge === "number") {
+      overallServiceAmount = receiptServiceCharge;
+      serviceDisplayText = `Service (Fixed Amount):`;
+    }
+  }
+
+  const overallGrandTotal =
+    overallSubtotal + overallTaxAmount + overallServiceAmount;
+
+  overallSummaryDiv.innerHTML = `
+    <h3 class="summary-title">🧾 Full Receipt Summary</h3>
+    <div class="summary-item-container">
+        <p class="summary-item">Items Subtotal: <span class="amount">${formatAmount(
+          overallSubtotal
+        )}</span></p>
+        <p class="summary-item">Tax: <span class="amount">${formatAmount(
+          overallTaxAmount
+        )}</span></p>
+        <p class="summary-item">${serviceDisplayText} <span class="amount">${formatAmount(
+    overallServiceAmount
+  )}</span></p>
+        <hr class="summary-divider">
+        <p class="summary-item total-grand">Grand Total: <span class="amount total-grand">${formatAmount(
+          overallGrandTotal
+        )}</span></p>
+    </div>
+  `;
+}
+
+function parseURLParameters() {
+  const params = new URLSearchParams(window.location.search);
+  const itemsParam = params.get("items");
+  const taxParam = params.get("tax");
+  const serviceParam = params.get("service");
+
+  if (itemsParam) {
+    try {
+      const parsedItems = JSON.parse(decodeURIComponent(itemsParam));
+      if (Array.isArray(parsedItems)) {
+        receiptData = parsedItems.map((item) => ({
+          name: item.name || "Unnamed Item",
+          price: parseFloat(item.price) || 0,
+          quantity: parseInt(item.quantity, 10) || 1,
+          id: item.id || `item-${Math.random().toString(36).substr(2, 9)}`,
+        }));
+      } else {
+        receiptData = [];
+      }
+    } catch (error) {
+      receiptData = [];
+    }
+  } else {
+    receiptData = [];
+  }
+
+  const parsedTax = parseFloat(taxParam);
+
+  if (serviceParam) {
+    if (serviceParam.includes("%")) {
+      receiptServiceCharge = serviceParam;
+      if (peopleInputContainer) peopleInputContainer.style.display = "none";
+    } else {
+      const fixedService = parseFloat(serviceParam);
+      if (!isNaN(fixedService) && fixedService > 0) {
+        receiptServiceCharge = fixedService;
+        if (peopleInputContainer) peopleInputContainer.style.display = "block";
+      } else {
+        receiptServiceCharge = null;
+        if (peopleInputContainer) peopleInputContainer.style.display = "none";
+      }
+    }
+  } else {
+    receiptServiceCharge = null;
+    if (peopleInputContainer) peopleInputContainer.style.display = "none";
+  }
+
+  const currentOverallSubtotal = receiptData.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
+
+  if (!isNaN(parsedTax) && parsedTax > 0 && currentOverallSubtotal > 0) {
+    receiptTaxRate = parsedTax / currentOverallSubtotal;
+  } else if (!isNaN(parsedTax) && parsedTax === 0) {
+    receiptTaxRate = 0;
+  } else {
+    receiptTaxRate = 0;
+  }
+
+  displayReceiptItems(receiptData);
+  calculateUserTotal();
+  updateOverallSummary();
 }
 
 function addQuickActionListeners() {
@@ -223,8 +398,6 @@ function addQuickActionListeners() {
       allItemCheckboxes.forEach((checkbox) => (checkbox.checked = true));
       calculateUserTotal();
     });
-  } else {
-    console.warn("Element with ID 'select-all-btn' not found!");
   }
 
   const clearAllBtn = document.getElementById("clear-all-btn");
@@ -236,84 +409,37 @@ function addQuickActionListeners() {
       allItemCheckboxes.forEach((checkbox) => (checkbox.checked = false));
       calculateUserTotal();
     });
-  } else {
-    console.warn("Element with ID 'clear-all-btn' not found!");
   }
-  // Removed shareBtn listener
 }
-
-// Removed shareResult function
 
 function showNotification(message) {
   const notification = document.createElement("div");
-  notification.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #10b981;
-    color: white;
-    padding: 16px 24px;
-    border-radius: 8px;
-    font-weight: 600;
-    z-index: 2000;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    animation: fadeInOut ${CONFIG.NOTIFICATION_DURATION / 1000}s ease-in-out;
-  `;
+  notification.className = "notification show";
   notification.textContent = message;
-
-  const style = document.createElement("style");
-  style.textContent = `
-    @keyframes fadeInOut {
-      0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
-      20%, 80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    }
-  `;
-  document.head.appendChild(style);
   document.body.appendChild(notification);
-
   setTimeout(() => {
-    if (notification.parentNode === document.body) {
+    notification.classList.remove("show");
+    setTimeout(() => {
       document.body.removeChild(notification);
-    }
-    if (style.parentNode === document.head) {
-      document.head.removeChild(style);
-    }
+    }, 300);
   }, CONFIG.NOTIFICATION_DURATION);
 }
 
-// Removed normalizeReceiptItem function as data comes pre-structured.
-
-// URL parsing from hash
-function parseURLParameters() {
-  // Example: #data=[{"name":"Burger","price":10.99},{"name":"Fries","price":3.5}]
-  const hash = window.location.hash;
-  if (hash && hash.startsWith("#data=")) {
-    const encodedData = hash.substring(6); // Remove #data=
-    try {
-      const decodedData = decodeURIComponent(encodedData);
-      const parsedItems = JSON.parse(decodedData);
-      // Ensure items have name and price, price is a number
-      return parsedItems
-        .map((item) => ({
-          name: String(item.name || "Unnamed Item"),
-          price: parseFloat(item.price || 0),
-        }))
-        .filter((item) => !isNaN(item.price)); // Filter out items where price became NaN
-    } catch (error) {
-      console.error("Error parsing URL items from hash:", error);
-      showNotification("Error: Could not load items from link.");
-      return []; // Return empty array on error
-    }
-  }
-  return []; // Return empty array if no valid data hash
-}
-
-let receiptData = [];
-
-window.addEventListener("DOMContentLoaded", () => {
-  receiptData = parseURLParameters();
-  displayReceiptItems(receiptData);
-  calculateUserTotal();
+document.addEventListener("DOMContentLoaded", () => {
+  parseURLParameters();
   addQuickActionListeners();
+  if (numberOfPeopleInput) {
+    numberOfPeopleInput.addEventListener("input", () => {
+      const count = parseInt(numberOfPeopleInput.value, 10);
+      if (!isNaN(count) && count >= CONFIG.MIN_PEOPLE_COUNT) {
+        numberOfPeopleForFixedService = count;
+        calculateUserTotal();
+        updateOverallSummary();
+      } else if (numberOfPeopleInput.value === "") {
+        numberOfPeopleForFixedService = CONFIG.MIN_PEOPLE_COUNT;
+        calculateUserTotal();
+        updateOverallSummary();
+      }
+    });
+  }
 });
