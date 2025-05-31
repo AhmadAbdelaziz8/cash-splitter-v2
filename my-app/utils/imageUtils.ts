@@ -15,13 +15,25 @@ export const parseImage = async (imageUri: string): Promise<string> => {
     }
     // Native environment (iOS/Android)
     else {
-      const image = await FileSystem.readAsStringAsync(imageUri, {
+      // Ensure the document directory exists
+      const docDir = FileSystem.documentDirectory + "images/";
+      await FileSystem.makeDirectoryAsync(docDir, { intermediates: true });
+
+      const newImageUri = docDir + Date.now() + "_" + imageUri.split("/").pop();
+      
+      await FileSystem.copyAsync({
+        from: imageUri,
+        to: newImageUri,
+      });
+
+      const image = await FileSystem.readAsStringAsync(newImageUri, {
         encoding: FileSystem.EncodingType.Base64,
       });
       return image;
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error in parseImage:", error); // Added for more detailed logging
     throw new Error(`Failed to parse image: ${errorMessage}`);
   }
 };

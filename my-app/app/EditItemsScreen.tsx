@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useReceipt, ReceiptItem } from "@/contexts/ReceiptContext";
 import { router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import ItemEditModal from "@/components/edit-items/ItemEditModal";
 import TaxEditModal from "@/components/edit-items/TaxEditModal";
@@ -45,6 +46,8 @@ const EditItemsScreen: React.FC = () => {
     useState<ReceiptItem | null>(null);
 
   const [initialLoadAttempted, setInitialLoadAttempted] = useState(false);
+
+  const { bottom } = useSafeAreaInsets();
 
   useEffect(() => {
     console.log(
@@ -174,7 +177,7 @@ const EditItemsScreen: React.FC = () => {
   }
 
   return (
-    <View className="flex-1 p-4 bg-slate-50">
+    <View style={{ paddingBottom: bottom }} className="flex-1 p-4 bg-slate-50">
       <Text className="text-2xl font-bold mb-4 text-slate-700">
         Edit Receipt Items
       </Text>

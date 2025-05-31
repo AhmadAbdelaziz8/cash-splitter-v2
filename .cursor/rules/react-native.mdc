@@ -31,7 +31,7 @@ alwaysApply: true
   - Avoid anonymous functions in `renderItem` or event handlers to prevent re-renders.
   
   UI and Styling:
-  - Use consistent styling by Nativewindcsss
+  - Use consistent styling by tailwind only, no stylesheets or inline CSS in the react-native directerioes 
   - Ensure responsive design by considering different screen sizes and orientations.
   - Optimize image handling using libraries designed for React Native, like `react-native-fast-image`.
   

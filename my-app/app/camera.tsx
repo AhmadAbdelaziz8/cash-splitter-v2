@@ -7,7 +7,9 @@ import {
   Alert,
   Linking,
   Platform,
+  StyleSheet,
 } from "react-native";
+import * as FileSystem from "expo-file-system";
 
 import {
   SafeAreaView,
@@ -26,6 +28,29 @@ export default function CameraScreen() {
   const [permissionStatus, setPermissionStatus] = useState<string>("unknown");
   const [isCameraReady, setIsCameraReady] = useState(false);
   const { resetState } = useReceipt();
+
+  const storeImageTemporarily = async (
+    originalUri: string
+  ): Promise<string> => {
+    try {
+      const imageDir = FileSystem.documentDirectory + "images/";
+      await FileSystem.makeDirectoryAsync(imageDir, { intermediates: true });
+      const fileName = Date.now() + "_" + originalUri.split("/").pop();
+      const newPersistentUri = imageDir + fileName;
+      await FileSystem.copyAsync({
+        from: originalUri,
+        to: newPersistentUri,
+      });
+      console.log(
+        "CAMERA_DEBUG: Image copied to persistent URI:",
+        newPersistentUri
+      );
+      return newPersistentUri;
+    } catch (e) {
+      console.error("CAMERA_DEBUG: Failed to copy image to persistent dir:", e);
+      throw e;
+    }
+  };
 
   useEffect(() => {
     resetState();
@@ -64,7 +89,7 @@ export default function CameraScreen() {
   };
 
   const handleCameraReady = () => {
-    console.log("Camera is ready");
+    console.log("CAMERA_DEBUG: Camera is ready event fired!");
     setIsCameraReady(true);
   };
 
@@ -101,19 +126,30 @@ export default function CameraScreen() {
       });
 
       if (photo?.uri) {
-        if (Platform.OS === "android" && !photo.uri.startsWith("file://")) {
-          const formattedUri = photo.uri.startsWith("/")
-            ? `file://${photo.uri}`
-            : photo.uri;
-          router.push({
-            pathname: "/preview",
-            params: { imageUri: formattedUri },
-          });
-        } else {
-          router.push({
-            pathname: "/preview",
-            params: { imageUri: photo.uri },
-          });
+        try {
+          const persistentUri = await storeImageTemporarily(photo.uri);
+          if (
+            Platform.OS === "android" &&
+            !persistentUri.startsWith("file://")
+          ) {
+            const formattedUri = persistentUri.startsWith("/")
+              ? `file://${persistentUri}`
+              : persistentUri;
+            router.push({
+              pathname: "/preview",
+              params: { imageUri: formattedUri },
+            });
+          } else {
+            router.push({
+              pathname: "/preview",
+              params: { imageUri: persistentUri },
+            });
+          }
+        } catch (copyError) {
+          Alert.alert(
+            "Error",
+            "Failed to save captured photo before previewing."
+          );
         }
       } else {
         Alert.alert(
@@ -172,11 +208,28 @@ export default function CameraScreen() {
         aspect: [4, 3],
       });
 
-      if (!result.canceled) {
-        router.push({
-          pathname: "/preview",
-          params: { imageUri: result.assets[0].uri },
-        });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        try {
+          const persistentUri = await storeImageTemporarily(
+            result.assets[0].uri
+          );
+          router.push({
+            pathname: "/preview",
+            params: { imageUri: persistentUri },
+          });
+        } catch (copyError) {
+          Alert.alert(
+            "Error",
+            "Failed to save selected photo before previewing."
+          );
+        }
+      } else if (result.canceled) {
+        console.log("Image selection cancelled");
+      } else {
+        Alert.alert(
+          "Error",
+          "No image selected or an unexpected error occurred."
+        );
       }
     } catch (error) {
       console.error("Error picking image:", error);
@@ -225,12 +278,12 @@ export default function CameraScreen() {
     <View className="flex-1 bg-slate-100">
       <CameraView
         ref={cameraRef}
-        className="flex-1"
+        style={StyleSheet.absoluteFill}
         facing={facing}
         onCameraReady={handleCameraReady}
         autofocus="on"
         onMountError={(error) => {
-          console.error("Camera mount error:", error);
+          console.error("CAMERA_DEBUG: Camera mount error:", error);
           Alert.alert(
             "Camera Error",
             "Failed to initialize camera. This might be due to another app using the camera or hardware issues.",
@@ -240,57 +293,55 @@ export default function CameraScreen() {
             ]
           );
         }}
+      />
+
+      <View
+        className="absolute top-0 left-0 right-0 z-10"
+        style={{ paddingTop: insets.top }}
       >
-        <View
-          className="absolute top-0 left-0 right-0 z-10"
-          style={{ paddingTop: insets.top }}
-        >
-          <SafeAreaView>
-            <View className="flex-row items-center justify-between p-4">
-              <TouchableOpacity
-                className="bg-white/80 p-2 rounded-full"
-                onPress={() => router.back()}
-              >
-                <Ionicons name="arrow-back" size={28} color="#374151" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="bg-white/80 p-2 rounded-full"
-                onPress={toggleCameraFacing}
-              >
-                <Ionicons name="camera-reverse" size={28} color="#374151" />
-              </TouchableOpacity>
-            </View>
-          </SafeAreaView>
+        <View className="flex-row items-center justify-between p-4">
+          <TouchableOpacity
+            className="bg-white/80 p-2 rounded-full"
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={28} color="#374151" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="bg-white/80 p-2 rounded-full"
+            onPress={toggleCameraFacing}
+          >
+            <Ionicons name="camera-reverse" size={28} color="#374151" />
+          </TouchableOpacity>
         </View>
+      </View>
 
-        <View
-          className="absolute bottom-0 left-0 right-0 px-4 pt-10 z-10"
-          style={{
-            paddingBottom: insets.bottom > 0 ? insets.bottom : 20,
-          }}
-        >
-          <View className="flex-row items-center justify-between">
-            <TouchableOpacity
-              className="bg-white/80 p-2 rounded-full"
-              onPress={handleSelectFromGallery}
-            >
-              <Ionicons name="images" size={28} color="#374151" />
-            </TouchableOpacity>
+      <View
+        className="absolute bottom-0 left-0 right-0 px-4 pt-10 z-10"
+        style={{
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 20,
+        }}
+      >
+        <View className="flex-row items-center justify-between">
+          <TouchableOpacity
+            className="bg-white/80 p-2 rounded-full"
+            onPress={handleSelectFromGallery}
+          >
+            <Ionicons name="images" size={28} color="#374151" />
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              className="bg-sky-400 p-1 rounded-full border-4 border-white"
-              onPress={handleCapturePhoto}
-              disabled={!isCameraReady}
-            >
-              <View className="h-16 w-16 rounded-full bg-sky-500" />
-            </TouchableOpacity>
+          <TouchableOpacity
+            className="bg-sky-400 p-1 rounded-full border-4 border-white"
+            onPress={handleCapturePhoto}
+            disabled={!isCameraReady}
+          >
+            <View className="h-16 w-16 rounded-full bg-sky-500" />
+          </TouchableOpacity>
 
-            <TouchableOpacity className="bg-white/80 p-2 rounded-full">
-              <Ionicons name="flash-off" size={28} color="#374151" />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity className="bg-white/80 p-2 rounded-full">
+            <Ionicons name="flash-off" size={28} color="#374151" />
+          </TouchableOpacity>
         </View>
-      </CameraView>
+      </View>
     </View>
   );
 }

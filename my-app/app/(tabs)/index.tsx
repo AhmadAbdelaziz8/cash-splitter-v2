@@ -34,7 +34,7 @@ export default function HomeScreen() {
 
   return (
     <ParallaxScrollView>
-      <View className="items-center">
+      <View className="items-center mt-4">
         <View className="w-20 h-20 mb-4 rounded-full bg-sky-100 items-center justify-center">
           <Ionicons name="receipt-outline" size={40} color="#0ea5e9" />
         </View>

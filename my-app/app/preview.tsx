@@ -8,6 +8,7 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { parseImage } from "../utils/imageUtils";
 import { useReceipt } from "@/contexts/ReceiptContext";
@@ -16,6 +17,7 @@ export default function PreviewScreen() {
   const { imageUri } = useLocalSearchParams<{ imageUri?: string }>();
   const [isProcessing, setIsProcessing] = useState(false);
   const { setImageUri: setContextImageUri, setImageBase64 } = useReceipt();
+  const { bottom } = useSafeAreaInsets();
 
   const handleRetake = () => {
     if (router.canGoBack()) {
@@ -52,7 +54,7 @@ export default function PreviewScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View style={{ paddingBottom: bottom }} className="flex-1 bg-gray-50">
       <View className="flex-1 p-5 justify-center items-center">
         {imageUri ? (
           <View className="w-full items-center">

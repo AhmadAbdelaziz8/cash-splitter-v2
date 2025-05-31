@@ -11,7 +11,7 @@ import { useBottomTabOverflow } from "@/components/ui/TabBarBackground";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 // Defines the height of the parallax header.
-const HEADER_HEIGHT = 30;
+const HEADER_HEIGHT = 50;
 
 type Props = PropsWithChildren<{
   headerImage?: ReactElement;
