@@ -259,10 +259,7 @@ function updateTotalDisplay(
     userTotalDiv.innerHTML = `
       <h3 class="summary-title">💰 Your Share</h3>
       <div class="summary-total">${formatAmount(total)}</div>
-      <div class="summary-breakdown">
-        ${breakdownHtml}
-      </div>
-      <p class="summary-note">Select items and adjust sharers for each item. If service is fixed, set total people sharing it.</p>
+
     `;
   }
 }
