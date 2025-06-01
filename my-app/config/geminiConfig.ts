@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI, Part, SchemaType } from "@google/generative-ai";
-const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
+import { getApiKey } from "@/services/apiKeyService";
 
 export interface ReceiptItem {
   itemName: string;
@@ -24,10 +24,14 @@ export async function parseReceiptImage(
   base64Image: string,
   mimeType: string = "image/jpeg"
 ): Promise<ParseResult> {
+  // Get API key from storage instead of environment variable
+  const API_KEY = await getApiKey();
+
   if (!API_KEY) {
     return {
       success: false,
-      error: "Google API Key not configured. Please check your .env file.",
+      error:
+        "Google API Key not found. Please set your API key in the app settings.",
       data: getMockData(), // Provide mock data for development without API key
     };
   }
@@ -58,7 +62,8 @@ export async function parseReceiptImage(
         service: {
           type: [SchemaType.NUMBER, SchemaType.STRING], // Accept both number and string
           nullable: true,
-          description: "Service charge. Can be a fixed amount (number) or a percentage (string, e.g., '10%')."
+          description:
+            "Service charge. Can be a fixed amount (number) or a percentage (string, e.g., '10%').",
         },
       },
       required: ["items", "total"],
@@ -117,7 +122,9 @@ If tax or service charges are not found, they can be omitted or set to null.`;
           extractionError instanceof Error
             ? extractionError.message
             : String(extractionError);
-        throw new Error(`Failed to parse JSON from response: ${errorMsg}. Original text: ${text}`);
+        throw new Error(
+          `Failed to parse JSON from response: ${errorMsg}. Original text: ${text}`
+        );
       }
     }
 
@@ -149,17 +156,18 @@ function validateParsedData(data: any): { isValid: boolean; error?: string } {
   if (!Array.isArray(data.items)) {
     return { isValid: false, error: "Items is not an array" };
   }
-  if (typeof data.total !== "number" && typeof data.total !== "string") { // Allow string for total initially if LLM sends it
+  if (typeof data.total !== "number" && typeof data.total !== "string") {
+    // Allow string for total initially if LLM sends it
     return { isValid: false, error: "Total is not a number or string" };
   }
-   if (typeof data.total === "string") { // Convert total to number if it's a string
+  if (typeof data.total === "string") {
+    // Convert total to number if it's a string
     const parsedTotal = parseFloat(data.total);
     if (isNaN(parsedTotal)) {
       return { isValid: false, error: `Invalid total: ${data.total}` };
     }
     data.total = parsedTotal;
   }
-
 
   for (let i = 0; i < data.items.length; i++) {
     const item = data.items[i];
@@ -248,7 +256,7 @@ function getMockData(): ParsedReceiptData {
   const serviceType = Math.random();
   let mockService: number | string | undefined;
   if (serviceType < 0.4) {
-    mockService = 15.00; // Fixed amount
+    mockService = 15.0; // Fixed amount
   } else if (serviceType < 0.8) {
     mockService = "12.5%"; // Percentage
   } else {
@@ -258,12 +266,12 @@ function getMockData(): ParsedReceiptData {
   return {
     items: [
       { itemName: "Burger", itemPrice: 10.99, quantity: 1 },
-      { itemName: "Fries", itemPrice: 3.50, quantity: 2 },
-      { itemName: "Soda", itemPrice: 2.50, quantity: 1 },
+      { itemName: "Fries", itemPrice: 3.5, quantity: 2 },
+      { itemName: "Soda", itemPrice: 2.5, quantity: 1 },
       { itemName: "Salad", itemPrice: 8.75, quantity: 1 },
       { itemName: "Coffee", itemPrice: 3.25, quantity: 2 },
     ],
-    total: 40.00, // Example total, should be calculated based on items, tax, service in real use
+    total: 40.0, // Example total, should be calculated based on items, tax, service in real use
     tax: 3.64,
     service: mockService,
   };

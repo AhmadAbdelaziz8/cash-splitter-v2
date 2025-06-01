@@ -33,6 +33,16 @@ export default function CameraScreen() {
     originalUri: string
   ): Promise<string> => {
     try {
+      // On web, we don't need to copy files - just return the original URI
+      if (Platform.OS === "web") {
+        console.log(
+          "CAMERA_DEBUG: Web platform - using original URI:",
+          originalUri
+        );
+        return originalUri;
+      }
+
+      // Native platforms (iOS/Android) - copy to persistent storage
       const imageDir = FileSystem.documentDirectory + "images/";
       await FileSystem.makeDirectoryAsync(imageDir, { intermediates: true });
       const fileName = Date.now() + "_" + originalUri.split("/").pop();
