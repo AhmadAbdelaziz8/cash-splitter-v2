@@ -51,7 +51,7 @@ export const API = {
 } as const;
 
 export const WEB_SHARING = {
-  BASE_URL: "https://yoursite.com",
+  BASE_URL: "https://cash-splitter-v2.netlify.app/",
   MAX_URL_LENGTH: 2048, // Browser URL length limit
   FALLBACK_SHARE_MESSAGE: "Check out this bill split calculation!",
 } as const;
