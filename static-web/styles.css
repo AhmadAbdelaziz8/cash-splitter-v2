@@ -114,10 +114,10 @@ h1 {
 
 .receipt-people {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 6px; /* Space between input and label initially, now between buttons and span */
-  justify-content: center; /* Center the whole group */
+  justify-content: center;
+  gap: 8px;
 }
 
 /* New styles for people counter buttons and display */
