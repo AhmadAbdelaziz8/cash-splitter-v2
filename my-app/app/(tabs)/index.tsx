@@ -9,12 +9,14 @@ import {
   ActivityIndicator,
   Modal,
   Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
 } from "react-native";
-import { ThemedText } from "@/components/ThemedText";
-import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { Ionicons } from "@expo/vector-icons";
 import { saveApiKey, getApiKey, deleteApiKey } from "@/services/apiKeyService";
 import ApiKeySetup from "@/components/ui/ApiKeySetup";
+import { useColorScheme } from "@/hooks/useColorScheme";
 
 export default function HomeScreen() {
   const [apiKeyInput, setApiKeyInput] = useState("");
@@ -23,6 +25,7 @@ export default function HomeScreen() {
   const [isSavingKey, setIsSavingKey] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [tempApiKey, setTempApiKey] = useState("");
+  const colorScheme = useColorScheme();
 
   useEffect(() => {
     const loadApiKey = async () => {
@@ -32,9 +35,9 @@ export default function HomeScreen() {
         setStoredApiKey(key);
         if (key) {
           setApiKeyInput(key);
+          setTempApiKey(key);
         }
       } catch (error) {
-        console.error("Failed to load API key:", error);
         Alert.alert("Error", "Could not load API key from storage.");
       } finally {
         setIsLoadingKey(false);
@@ -70,7 +73,6 @@ export default function HomeScreen() {
       Alert.alert("Error", "Please enter a valid API key.");
       return;
     }
-
     setIsSavingKey(true);
     try {
       await saveApiKey(tempApiKey.trim());
@@ -95,39 +97,20 @@ export default function HomeScreen() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            console.log("Delete API key button pressed");
             setIsSavingKey(true);
             try {
-              console.log("Calling deleteApiKey...");
               await deleteApiKey();
-              console.log("API key deleted from storage, updating state...");
-
-              // Reset all API key related state
               setStoredApiKey(null);
               setApiKeyInput("");
               setTempApiKey("");
               setShowSettingsModal(false);
-
-              console.log("State updated successfully");
-
-              // Show success message and then the user will see the setup component
               Alert.alert(
-                "Success",
-                "API Key deleted successfully. You'll need to set up a new API key to use the app.",
-                [
-                  {
-                    text: "OK",
-                    onPress: () => {
-                      // Ensure the component re-renders to show ApiKeySetup
-                      console.log("User acknowledged deletion");
-                    },
-                  },
-                ]
+                "API Key Deleted",
+                "Your API Key has been successfully deleted. Please set up a new one to continue using the app."
               );
             } catch (error) {
-              console.error("Error in delete process:", error);
               Alert.alert(
-                "Error",
+                "Delete Failed",
                 `Failed to delete API Key: ${
                   error instanceof Error ? error.message : "Unknown error"
                 }`
@@ -142,149 +125,181 @@ export default function HomeScreen() {
   };
 
   const handleScanPress = () => {
-    if (!storedApiKey) {
-      Alert.alert(
-        "API Key Required",
-        "Please set your Gemini API Key first before scanning a receipt.",
-        [{ text: "OK" }]
-      );
-      return;
-    }
     router.push("/camera");
   };
 
   const handleApiKeySaved = (apiKey: string) => {
     setStoredApiKey(apiKey);
     setApiKeyInput(apiKey);
+    setTempApiKey(apiKey);
   };
 
   const features = [
     {
       icon: "camera-outline" as const,
-      title: "Scan Receipt",
-      description: "Take a photo of your receipt with our easy-to-use camera",
+      title: "Scan Receipts Instantly",
+      description: "Use your camera to capture receipt details in seconds.",
     },
     {
       icon: "receipt-outline" as const,
-      title: "Process Receipt",
-      description: "Our AI extracts all items and prices automatically",
+      title: "AI-Powered Item Extraction",
+      description:
+        "Our smart AI automatically identifies items, prices, and totals.",
     },
     {
       icon: "create-outline" as const,
-      title: "Review Items",
-      description: "Review the items and prices and add any missing items",
+      title: "Edit & Verify with Ease",
+      description: "Review and adjust extracted details for perfect accuracy.",
     },
     {
       icon: "share-social-outline" as const,
-      title: "Share Results",
-      description: "Share a link with your friends to split the bill",
+      title: "Split & Share Bills",
+      description:
+        "Generate a shareable link for friends to settle up effortlessly.",
     },
   ];
 
   if (isLoadingKey) {
     return (
-      <ParallaxScrollView>
-        <View className="items-center justify-center flex-1 mt-20">
-          <ActivityIndicator size="large" color="#0ea5e9" />
-          <Text className="text-slate-600 mt-4">Loading...</Text>
-        </View>
-      </ParallaxScrollView>
+      <View className="flex-1 items-center justify-center bg-white dark:bg-slate-900 p-4">
+        <ActivityIndicator size="large" color="#0ea5e9" />
+        <Text className="text-slate-600 dark:text-slate-400 mt-4 text-lg">
+          Loading Secure Storage...
+        </Text>
+      </View>
     );
   }
 
   return (
-    <ParallaxScrollView>
-      <View className="items-center mt-4 px-4">
-        {/* Header with settings button when API key exists */}
-        {storedApiKey && (
-          <View className="w-full flex-row justify-end mb-4">
+    <ScrollView
+      className="flex-1 bg-slate-50 dark:bg-slate-900"
+      contentContainerStyle={styles.scrollViewContent}
+    >
+      <View className="w-full max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <View className="flex-row justify-between items-center mb-8">
+          <Text className="text-4xl font-bold text-slate-800 dark:text-slate-100">
+            Cash Splitter
+          </Text>
+          {storedApiKey && (
             <TouchableOpacity
-              className="p-2 rounded-full bg-slate-100"
+              className="p-3 rounded-full bg-slate-200 dark:bg-slate-800 active:bg-slate-300 dark:active:bg-slate-700"
               onPress={handleSettingsPress}
             >
-              <Ionicons name="settings-outline" size={24} color="#64748b" />
+              <Ionicons name="settings-outline" size={28} color="#3b82f6" />
             </TouchableOpacity>
+          )}
+        </View>
+
+        {!storedApiKey ? (
+          <View className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-xl">
+            <ApiKeySetup onApiKeySaved={handleApiKeySaved} />
+          </View>
+        ) : (
+          <View className="mb-12">
+            <View className="items-center mb-8">
+              <View className="w-28 h-28 mb-6 rounded-full bg-sky-100 dark:bg-sky-900 items-center justify-center border-4 border-sky-200 dark:border-sky-700">
+                <Ionicons
+                  name="scan-outline"
+                  size={60}
+                  className="text-sky-500 dark:text-sky-400"
+                />
+              </View>
+              <Text className="text-2xl font-semibold text-slate-700 dark:text-slate-200 mb-2 text-center">
+                Ready to Scan!
+              </Text>
+              <Text className="text-lg text-slate-500 dark:text-slate-400 mb-8 text-center max-w-md">
+                Your API key is set. Capture a receipt to begin splitting
+                expenses with ease.
+              </Text>
+              <TouchableOpacity
+                className="w-full max-w-xs py-4 px-8 rounded-full items-center justify-center bg-sky-500 active:bg-sky-600 shadow-lg"
+                onPress={handleScanPress}
+              >
+                <View className="flex-row items-center">
+                  <Ionicons
+                    name="camera-outline"
+                    size={22}
+                    className="text-white mr-2"
+                  />
+                  <Text className="text-white text-lg font-bold">
+                    Scan New Receipt
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
-        <View className="w-20 h-20 mb-4 rounded-full bg-sky-100 items-center justify-center">
-          <Ionicons name="receipt-outline" size={40} color="#0ea5e9" />
+        <View className="mt-12">
+          <Text className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-2 text-center">
+            How It Works
+          </Text>
+          <Text className="text-lg text-slate-500 dark:text-slate-400 mb-10 text-center max-w-xl mx-auto">
+            Splitting bills is now simpler than ever. Just follow these easy
+            steps.
+          </Text>
+          <View className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {features.map((feature, index) => (
+              <View
+                key={index}
+                className="flex-row p-6 bg-white dark:bg-slate-800 rounded-xl shadow-lg items-start space-x-5"
+              >
+                <View className="flex-shrink-0 w-14 h-14 rounded-full bg-sky-100 dark:bg-sky-900 items-center justify-center">
+                  <Ionicons
+                    name={feature.icon}
+                    size={30}
+                    className="text-sky-500 dark:text-sky-400"
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-bold text-xl text-slate-700 dark:text-slate-200 mb-1">
+                    {feature.title}
+                  </Text>
+                  <Text className="text-base text-slate-500 dark:text-slate-400">
+                    {feature.description}
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
 
-        <ThemedText className="text-3xl font-bold mb-2 text-center text-slate-800">
-          Cash Splitter
-        </ThemedText>
-
-        <ThemedText className="text-center text-lg mb-6 opacity-80 text-slate-600">
-          Take a photo of your receipt and let AI split the costs.
-        </ThemedText>
-
-        {!storedApiKey ? (
-          <ApiKeySetup onApiKeySaved={handleApiKeySaved} />
-        ) : (
-          <>
-            <TouchableOpacity
-              className="w-full py-4 px-8 rounded-full items-center justify-center bg-sky-400 active:bg-sky-500 shadow-md mb-8"
-              onPress={handleScanPress}
-            >
-              <Text className="text-gray-800 text-lg font-bold">
-                Scan Receipt
-              </Text>
-            </TouchableOpacity>
-          </>
-        )}
-
-        <View className="w-full">
-          <ThemedText className="font-bold text-xl mb-4 text-slate-800">
-            How it Works
-          </ThemedText>
-
-          {features.map((feature, index) => (
-            <View key={index} className="flex-row mb-5 items-start">
-              <View className="w-12 h-12 rounded-full bg-sky-100 items-center justify-center mr-4 shrink-0">
-                <Ionicons name={feature.icon} size={24} color="#0ea5e9" />
-              </View>
-              <View className="flex-1">
-                <ThemedText className="font-bold text-base text-slate-700">
-                  {feature.title}
-                </ThemedText>
-                <ThemedText className="text-sm opacity-70 text-slate-600">
-                  {feature.description}
-                </ThemedText>
-              </View>
-            </View>
-          ))}
+        <View className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-700 items-center">
+          <Text className="text-sm text-slate-500 dark:text-slate-400">
+            Cash Splitter v1.0 - Effortless Bill Management
+          </Text>
         </View>
       </View>
 
-      {/* Settings Modal */}
       <Modal
         visible={showSettingsModal}
         transparent={true}
         animationType="slide"
         onRequestClose={() => setShowSettingsModal(false)}
       >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-3xl p-6">
+        <View className="flex-1 bg-black/60 justify-end">
+          <View className="bg-slate-50 dark:bg-slate-800 rounded-t-3xl p-6 shadow-2xl">
             <View className="flex-row items-center justify-between mb-6">
-              <Text className="text-xl font-bold text-slate-800">
+              <Text className="text-2xl font-bold text-slate-800 dark:text-slate-100">
                 API Key Settings
               </Text>
               <TouchableOpacity
-                className="p-2"
+                className="p-2 rounded-full active:bg-slate-200 dark:active:bg-slate-700"
                 onPress={() => setShowSettingsModal(false)}
               >
-                <Ionicons name="close" size={24} color="#64748b" />
+                <Ionicons
+                  name="close"
+                  size={28}
+                  className="text-slate-600 dark:text-slate-300"
+                />
               </TouchableOpacity>
             </View>
 
-            <Text className="text-sm text-slate-600 mb-4">
-              Update your Google Gemini API Key
+            <Text className="text-base text-slate-600 dark:text-slate-300 mb-2">
+              Your Google Gemini API Key for receipt processing.
             </Text>
-
-            {/* AI Studio Link */}
             <TouchableOpacity
-              className="flex-row items-center justify-center p-3 mb-4 bg-green-50 border border-green-200 rounded-lg"
+              className="flex-row items-center justify-center p-3 mb-5 bg-green-500 active:bg-green-600 rounded-lg shadow"
               onPress={async () => {
                 const url = "https://aistudio.google.com/app/apikey";
                 const supported = await Linking.canOpenURL(url);
@@ -298,58 +313,87 @@ export default function HomeScreen() {
                 }
               }}
             >
-              <Ionicons name="open-outline" size={20} color="#10b981" />
-              <Text className="text-green-700 font-semibold ml-2">
-                Get API Key from AI Studio
+              <Ionicons
+                name="open-outline"
+                size={20}
+                className="text-white mr-2"
+              />
+              <Text className="text-white font-semibold text-base">
+                Get/Manage API Key at AI Studio
               </Text>
             </TouchableOpacity>
 
             <TextInput
-              className="bg-slate-50 border border-slate-300 rounded-lg p-4 mb-4 text-base text-slate-900"
-              placeholder="Enter your Google Gemini API Key"
+              className="bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg p-4 mb-5 text-base text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
+              placeholder="Enter or update your API Key"
               value={tempApiKey}
               onChangeText={setTempApiKey}
               secureTextEntry={true}
               autoCapitalize="none"
-              placeholderTextColor="#94a3b8"
             />
 
-            <View className="flex-row space-x-3">
+            <View className="flex-row space-x-3 mb-6">
               <TouchableOpacity
-                className={`flex-1 py-3 px-4 rounded-lg items-center justify-center ${
-                  isSavingKey ? "bg-sky-300" : "bg-sky-500"
+                className={`flex-1 py-3 px-4 rounded-lg items-center justify-center shadow-md ${
+                  isSavingKey
+                    ? "bg-sky-300 dark:bg-sky-700"
+                    : "bg-sky-500 dark:bg-sky-600 active:bg-sky-600 dark:active:bg-sky-500"
                 }`}
                 onPress={handleUpdateKey}
-                disabled={isSavingKey}
+                disabled={isSavingKey || tempApiKey === storedApiKey}
               >
                 {isSavingKey ? (
-                  <ActivityIndicator color="white" size="small" />
+                  <ActivityIndicator
+                    color={colorScheme === 'dark' ? "#e2e8f0" : "#ffffff"}
+                    size="small"
+                  />
                 ) : (
-                  <Text className="text-white font-bold">Update Key</Text>
+                  <Text className="text-white font-bold text-base">
+                    Update Key
+                  </Text>
                 )}
               </TouchableOpacity>
-
               <TouchableOpacity
-                className="flex-1 py-3 px-4 rounded-lg items-center justify-center bg-red-500"
+                className={`flex-1 py-3 px-4 rounded-lg items-center justify-center shadow-md ${
+                  isSavingKey
+                    ? "bg-red-300 dark:bg-red-800"
+                    : "bg-red-600 dark:bg-red-700 active:bg-red-700 dark:active:bg-red-600"
+                }`}
                 onPress={handleDeleteKeyConfirm}
-                disabled={isSavingKey}
+                disabled={isSavingKey || !storedApiKey}
               >
                 <View className="flex-row items-center">
-                  <Ionicons name="trash-outline" size={16} color="white" />
-                  <Text className="text-white font-bold ml-1">Delete Key</Text>
+                  <Ionicons
+                    name="trash-outline"
+                    size={18}
+                    className="text-white mr-1.5"
+                  />
+                  <Text className="text-white font-bold text-base">
+                    Delete Key
+                  </Text>
                 </View>
               </TouchableOpacity>
             </View>
-
-            <View className="flex-row items-center mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <Ionicons name="shield-checkmark" size={16} color="#f59e0b" />
-              <Text className="text-xs text-amber-800 ml-2 flex-1">
-                Your API key is stored securely on this device only
+            <View className="flex-row items-center p-3 bg-amber-100 dark:bg-amber-800/50 border border-amber-300 dark:border-amber-700 rounded-lg">
+              <Ionicons
+                name="shield-checkmark-outline"
+                size={20}
+                className="text-amber-600 dark:text-amber-400"
+              />
+              <Text className="text-sm text-amber-700 dark:text-amber-300 ml-2 flex-1">
+                Your API key is stored securely on this device and never shared.
               </Text>
             </View>
           </View>
         </View>
       </Modal>
-    </ParallaxScrollView>
+    </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  scrollViewContent: {
+    flexGrow: 1,
+    justifyContent: "space-between",
+  },
+});

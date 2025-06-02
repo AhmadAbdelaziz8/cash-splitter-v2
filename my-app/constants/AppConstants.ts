@@ -32,7 +32,8 @@ export const MESSAGES = {
     "Allow Cash Splitter to access your camera to scan receipts",
   GALLERY_PERMISSION:
     "Allow Cash Splitter to access your photo library to select receipt images",
-  NO_API_KEY: "Google API Key not configured. Please check your .env file.",
+  NO_API_KEY:
+    "Google API Key not found. Please set your API key in the app settings.",
   PROCESSING_STEPS: [
     "Analyzing receipt...",
     "Identifying items...",
@@ -50,7 +51,7 @@ export const API = {
 } as const;
 
 export const WEB_SHARING = {
-  BASE_URL: process.env.EXPO_PUBLIC_WEB_BASE_URL || "https://yoursite.com",
+  BASE_URL: "https://yoursite.com",
   MAX_URL_LENGTH: 2048, // Browser URL length limit
   FALLBACK_SHARE_MESSAGE: "Check out this bill split calculation!",
 } as const;

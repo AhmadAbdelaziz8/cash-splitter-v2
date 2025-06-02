@@ -1,49 +1,33 @@
 # 🔑 API Setup Guide
 
-## Google Gemini AI Integration Setup
+## Google Gemini API Key
 
-### Step 1: Get Your API Key
+This app uses Google's Gemini AI to process receipt images. **Users provide their own API key directly in the app** - no environment variables needed.
 
-1. Go to [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Sign in with your Google account
-3. Click "Create API Key"
-4. Copy the generated API key
+## How Users Get Their API Key
 
-### Step 2: Set Up Environment Variable
+1. **Visit Google AI Studio**: https://aistudio.google.com/app/apikey
+2. **Sign in** with your Google account
+3. **Create a new API key** (free)
+4. **Copy the API key**
+5. **Enter it in the app** when prompted
 
-Create a `.env` file in the `my-app` directory with the following content:
+## For Developers
 
-```env
-EXPO_PUBLIC_GOOGLE_API_KEY=your_actual_api_key_here
-```
+- **No .env file needed** - the app handles API key storage
+- **User-provided keys** are stored securely on device using:
+  - `expo-secure-store` on iOS/Android
+  - `localStorage` on web
+- **API key validation** happens at runtime
+- **Fallback mock data** when no API key is provided
 
-Replace `your_actual_api_key_here` with the API key you copied from Google AI Studio.
+## Security Features
 
-### Step 3: Verify Setup
+- API keys never leave the user's device
+- Secure storage prevents key exposure
+- Users control their own API usage and billing
+- No centralized API key management needed
 
-1. Restart your development server
-2. Take a photo with the app
-3. Check the console logs - you should see:
-   - ✅ API Key available: true
-   - 🚀 Initializing Gemini AI...
-   - 📤 Sending request to Gemini...
+## Testing
 
-### Troubleshooting
-
-**If you see "API Key available: false":**
-
-- Make sure the `.env` file is in the correct location (`my-app/.env`)
-- Make sure the variable is named exactly `EXPO_PUBLIC_GOOGLE_API_KEY`
-- Restart your development server after creating the `.env` file
-
-**If you see "API key not valid":**
-
-- Double-check your API key is copied correctly
-- Make sure there are no extra spaces or characters
-- Try generating a new API key from Google AI Studio
-
-### Security Note
-
-- Keep your API key secure
-- Don't commit the `.env` file to version control
-- Add `.env` to your `.gitignore` file if it's not already there
+The app provides mock data when no API key is configured, allowing development and testing without requiring an API key.

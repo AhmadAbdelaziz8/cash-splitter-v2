@@ -100,31 +100,16 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     setIsProcessing(true);
     setProcessingError(null);
     try {
-      console.log(
-        "[ReceiptContext] processReceiptImage: Calling apiReceiptService.parseReceiptImage"
-      );
       const result = await apiReceiptService.parseReceiptImage(imgBase64);
-      console.log(
-        "[ReceiptContext] processReceiptImage: API Result:",
-        JSON.stringify(result)
-      );
       if (result.success && result.data) {
         setProcessedReceiptData(result.data);
-        console.log(
-          "[ReceiptContext] processReceiptImage: Data processed successfully."
-        );
       } else {
-        // Handle API error, but potentially still set mock data if provided
         setProcessingError(result.error || "Failed to process receipt.");
-        console.warn(
-          "[ReceiptContext] processReceiptImage: Error - ",
-          result.error
-        );
-        if (result.data) {
-          // If API returned error but also mock data
+        // Only set data if it exists AND it's not an API key error
+        if (result.data && !result.error?.includes("API Key not found")) {
           setProcessedReceiptData(result.data);
         } else {
-          // If critical error and no fallback data from API, clear existing (or set empty)
+          // Clear any existing data when there's an API key error
           setItems([]);
           setOriginalReceiptTotal(null);
           setReceiptTax(null);
@@ -132,25 +117,17 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         }
       }
     } catch (error) {
-      console.error(
-        "[ReceiptContext] processReceiptImage: CATCH block error:",
-        error
-      );
       const message =
         error instanceof Error
           ? error.message
           : "An unexpected error occurred.";
       setProcessingError(message);
-      // Clear data on critical catch
       setItems([]);
       setOriginalReceiptTotal(null);
       setReceiptTax(null);
       setServiceChargeValue(null);
     } finally {
       setIsProcessing(false);
-      console.log(
-        "[ReceiptContext] processReceiptImage: setIsProcessing(false)."
-      );
     }
   };
 

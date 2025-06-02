@@ -8,13 +8,10 @@ import {
   Linking,
   Platform,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
-
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CameraView, useCameraPermissions, CameraType } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,38 +24,28 @@ export default function CameraScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [permissionStatus, setPermissionStatus] = useState<string>("unknown");
   const [isCameraReady, setIsCameraReady] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { resetState } = useReceipt();
 
   const storeImageTemporarily = async (
     originalUri: string
   ): Promise<string> => {
     try {
-      // On web, we don't need to copy files - just return the original URI
       if (Platform.OS === "web") {
-        console.log(
-          "CAMERA_DEBUG: Web platform - using original URI:",
-          originalUri
-        );
         return originalUri;
       }
-
-      // Native platforms (iOS/Android) - copy to persistent storage
       const imageDir = FileSystem.documentDirectory + "images/";
       await FileSystem.makeDirectoryAsync(imageDir, { intermediates: true });
-      const fileName = Date.now() + "_" + originalUri.split("/").pop();
+      const fileName = `cam_${Date.now()}_${originalUri.split("/").pop()}`;
       const newPersistentUri = imageDir + fileName;
       await FileSystem.copyAsync({
         from: originalUri,
         to: newPersistentUri,
       });
-      console.log(
-        "CAMERA_DEBUG: Image copied to persistent URI:",
-        newPersistentUri
-      );
       return newPersistentUri;
     } catch (e) {
-      console.error("CAMERA_DEBUG: Failed to copy image to persistent dir:", e);
-      throw e;
+      console.error("Error storing image temporarily:", e);
+      throw new Error(`Failed to store image: ${e instanceof Error ? e.message : String(e)}`);
     }
   };
 
@@ -67,13 +54,11 @@ export default function CameraScreen() {
     if (permission) {
       setPermissionStatus(permission.granted ? "granted" : "denied");
     }
-
     const checkAndRequestPermission = async () => {
-      if (permission && !permission.granted) {
+      if (permission && !permission.granted && permission.canAskAgain) {
         await requestCameraPermission();
       }
     };
-
     checkAndRequestPermission();
   }, [permission]);
 
@@ -81,11 +66,10 @@ export default function CameraScreen() {
     try {
       const result = await requestPermission();
       setPermissionStatus(result.granted ? "granted" : "denied");
-
       if (!result.granted) {
         Alert.alert(
           "Camera Permission Required",
-          "This app needs camera access to function properly. Please grant permission in your device settings.",
+          "This app needs camera access to function. Please grant permission in your device settings.",
           [
             { text: "Cancel", style: "cancel" },
             { text: "Open Settings", onPress: () => Linking.openSettings() },
@@ -95,263 +79,312 @@ export default function CameraScreen() {
     } catch (error) {
       console.error("Error requesting camera permission:", error);
       setPermissionStatus("error");
+      Alert.alert("Error", "Could not request camera permission.");
     }
   };
 
   const handleCameraReady = () => {
-    console.log("CAMERA_DEBUG: Camera is ready event fired!");
     setIsCameraReady(true);
   };
 
-  const handleBack = () => {
-    router.back();
-  };
-
   const toggleCameraFacing = () => {
+    if (isProcessing) return;
     setFacing((current) => (current === "back" ? "front" : "back"));
   };
 
   const handleCapturePhoto = async () => {
-    if (!isCameraReady) {
-      Alert.alert(
-        "Camera not ready",
-        "Please wait for the camera to initialize"
-      );
+    if (!isCameraReady || !cameraRef.current || isProcessing) {
       return;
     }
-
-    if (!cameraRef.current) {
-      Alert.alert("Error", "Camera reference not available");
-      return;
-    }
-
+    setIsProcessing(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.7,
-        skipProcessing: false,
+        quality: Platform.OS === 'web' ? 0.9 : 0.7,
         base64: false,
         exif: false,
       });
 
       if (photo?.uri) {
-        try {
-          const persistentUri = await storeImageTemporarily(photo.uri);
-          if (
-            Platform.OS === "android" &&
-            !persistentUri.startsWith("file://")
-          ) {
-            const formattedUri = persistentUri.startsWith("/")
-              ? `file://${persistentUri}`
-              : persistentUri;
-            router.push({
-              pathname: "/preview",
-              params: { imageUri: formattedUri },
-            });
-          } else {
-            router.push({
-              pathname: "/preview",
-              params: { imageUri: persistentUri },
-            });
-          }
-        } catch (copyError) {
-          Alert.alert(
-            "Error",
-            "Failed to save captured photo before previewing."
-          );
-        }
+        const persistentUri = await storeImageTemporarily(photo.uri);
+        router.push({
+          pathname: "/preview",
+          params: { imageUri: persistentUri },
+        });
       } else {
-        Alert.alert(
-          "Error",
-          "Failed to capture photo - no image data received"
-        );
+        Alert.alert("Capture Failed", "No image data was received from the camera.");
       }
     } catch (error) {
-      console.error("Failed to take picture:", error);
-
-      let errorMessage = "Unknown error occurred";
-      if (error instanceof Error) {
-        if (error.message.includes("Camera is not running")) {
-          errorMessage = "Camera is not active. Please restart the camera.";
-        } else if (error.message.includes("permission")) {
-          errorMessage =
-            "Camera permission issue. Please check app permissions.";
-        } else if (
-          error.message.includes("storage") ||
-          error.message.includes("disk")
-        ) {
-          errorMessage = "Not enough storage space to save the photo.";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-
-      Alert.alert("Camera Error", `Failed to take picture: ${errorMessage}`, [
-        { text: "Try Again", style: "default" },
-        { text: "Select from Gallery", onPress: handleSelectFromGallery },
-      ]);
+      console.error("Capture Error:", error);
+      Alert.alert("Camera Error", `Failed to take picture: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   const handleSelectFromGallery = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
     try {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
-
       if (status !== "granted") {
         Alert.alert(
           "Permission Required",
-          "We need access to your photo library to select images.",
+          "Access to your photo library is needed to select images.",
           [
             { text: "Cancel", style: "cancel" },
-            { text: "Settings", onPress: () => Linking.openSettings() },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
           ]
         );
+        setIsProcessing(false);
         return;
       }
-
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: "Images" as any,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.8,
-        allowsEditing: true,
-        aspect: [4, 3],
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        try {
-          const persistentUri = await storeImageTemporarily(
-            result.assets[0].uri
-          );
-          router.push({
-            pathname: "/preview",
-            params: { imageUri: persistentUri },
-          });
-        } catch (copyError) {
-          Alert.alert(
-            "Error",
-            "Failed to save selected photo before previewing."
-          );
-        }
+        const persistentUri = await storeImageTemporarily(result.assets[0].uri);
+        router.push({
+          pathname: "/preview",
+          params: { imageUri: persistentUri },
+        });
       } else if (result.canceled) {
-        console.log("Image selection cancelled");
-      } else {
-        Alert.alert(
-          "Error",
-          "No image selected or an unexpected error occurred."
-        );
       }
     } catch (error) {
-      console.error("Error picking image:", error);
-      Alert.alert("Error", "Failed to access photo library");
+      console.error("Gallery Error:", error);
+      Alert.alert("Gallery Error", `Failed to access photo library: ${error instanceof Error ? error.message : "Unknown error"}`);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
+  const renderLoadingView = (message: string) => (
+    <View style={[styles.centeredView, styles.darkBg]}>
+      <ActivityIndicator size="large" color="#38bdf8" />
+      <Text style={styles.loadingText}>{message}</Text>
+    </View>
+  );
+
+  if (isProcessing) {
+    return renderLoadingView("Processing Image...");
+  }
+
   if (!permission) {
-    return (
-      <View className="flex-1 justify-center items-center bg-gray-50">
-        <Text className="text-gray-800">Loading camera permissions...</Text>
-      </View>
-    );
+    return renderLoadingView("Loading Camera Permissions...");
   }
 
   if (!permission.granted) {
     return (
-      <View className="flex-1 justify-center items-center p-4 bg-gray-50">
-        <Text className="text-lg mb-4 text-center text-gray-800">
-          We need your permission to use the camera
+      <View style={[styles.centeredView, styles.darkBg, styles.paddingLg]}>
+        <Ionicons name="alert-circle-outline" size={60} style={styles.permissionIcon} />
+        <Text style={styles.permissionTitle}>
+          Camera Access Needed
         </Text>
-        <Text className="text-sm mb-6 text-center text-gray-600">
-          Permission status: {permissionStatus}
-          {Platform.OS === "android" && ` (Android ${Platform.Version})`}
+        <Text style={styles.permissionText}>
+          This app requires camera permission to scan receipts. Please grant access in your device settings.
+        </Text>
+        <Text style={styles.permissionStatusText}>
+          Current status: {permissionStatus}
         </Text>
         <TouchableOpacity
-          className="bg-sky-400 py-3 px-6 rounded-md"
+          style={[styles.button, styles.primaryButton, styles.mtLg]}
           onPress={requestCameraPermission}
+          disabled={!permission.canAskAgain}
         >
-          <Text className="text-gray-800 font-bold text-center text-base">
-            GRANT PERMISSION
-          </Text>
+          <Text style={styles.buttonText}>Grant Permission</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
-          className="mt-4 py-2 px-4"
+          style={[styles.button, styles.secondaryButton, styles.mtMd]}
           onPress={() => Linking.openSettings()}
         >
-          <Text className="text-sky-500 text-center">Open Settings</Text>
+          <Text style={styles.secondaryButtonText}>Open Settings</Text>
+        </TouchableOpacity>
+         <TouchableOpacity
+          style={[styles.button, styles.subtleButton, styles.mtMd]}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.subtleButtonText}>Go Back</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-slate-100">
+    <View style={[styles.container, styles.darkBg]}>
       <CameraView
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
         facing={facing}
         onCameraReady={handleCameraReady}
-        autofocus="on"
-        onMountError={(error) => {
-          console.error("CAMERA_DEBUG: Camera mount error:", error);
-          Alert.alert(
-            "Camera Error",
-            "Failed to initialize camera. This might be due to another app using the camera or hardware issues.",
-            [
-              { text: "Try Again", onPress: () => router.replace("/camera") },
-              { text: "Use Gallery", onPress: handleSelectFromGallery },
-            ]
-          );
-        }}
       />
 
-      <View
-        className="absolute top-0 left-0 right-0 z-10"
-        style={{ paddingTop: insets.top }}
-      >
-        <View className="flex-row items-center justify-between p-4">
-          <TouchableOpacity
-            className="bg-white/80 p-2 rounded-full"
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={28} color="#374151" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="bg-white/80 p-2 rounded-full"
-            onPress={toggleCameraFacing}
-          >
-            <Ionicons name="camera-reverse" size={28} color="#374151" />
-          </TouchableOpacity>
-        </View>
+      <View style={[styles.topControls, { paddingTop: insets.top + 10 }]}>
+        <TouchableOpacity
+          style={styles.iconButtonContainer}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back-outline" size={30} color="white" />
+        </TouchableOpacity>
       </View>
 
-      <View
-        className="absolute bottom-0 left-0 right-0 px-4 pt-10 z-10"
-        style={{
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 20,
-        }}
-      >
-        <View className="flex-row items-center justify-between">
-          <TouchableOpacity
-            className="bg-white/80 p-2 rounded-full"
-            onPress={handleSelectFromGallery}
-          >
-            <Ionicons name="images" size={28} color="#374151" />
-          </TouchableOpacity>
+      <View style={[styles.bottomControls, { paddingBottom: insets.bottom + 20 }]}>
+        <TouchableOpacity
+          style={styles.iconButtonContainer}
+          onPress={handleSelectFromGallery}
+          disabled={isProcessing}
+        >
+          <Ionicons name="images-outline" size={32} color="white" />
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            className="bg-sky-400 p-1 rounded-full border-4 border-white"
-            onPress={handleCapturePhoto}
-            disabled={!isCameraReady}
-          >
-            <View className="h-16 w-16 rounded-full bg-sky-500" />
-          </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.captureButton}
+          onPress={handleCapturePhoto}
+          disabled={!isCameraReady || isProcessing}
+        >
+          {isProcessing ? (
+            <ActivityIndicator color="#334155" size="small" />
+          ) : (
+            <View style={styles.captureButtonInner} />
+          )}
+        </TouchableOpacity>
 
-          <TouchableOpacity className="bg-white/80 p-2 rounded-full">
-            <Ionicons name="flash-off" size={28} color="#374151" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.iconButtonContainer}
+          onPress={toggleCameraFacing}
+          disabled={isProcessing}
+        >
+          <Ionicons name="camera-reverse-outline" size={32} color="white" />
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  darkBg: {
+    backgroundColor: "#0f172a",
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  paddingLg: {
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 15,
+    fontSize: 18,
+    color: "#cbd5e1",
+  },
+  permissionIcon: {
+    color: "#f87171",
+    marginBottom: 20,
+  },
+  permissionTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#f1f5f9",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  permissionText: {
+    fontSize: 16,
+    color: "#94a3b8",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  permissionStatusText: {
+    fontSize: 14,
+    color: "#64748b",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  button: {
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  primaryButton: {
+    backgroundColor: "#3b82f6",
+  },
+  secondaryButton: {
+    backgroundColor: "#334155",
+  },
+  subtleButton: {
+    backgroundColor: "transparent",
+    borderColor: "#334155",
+    borderWidth: 1,
+  },
+  buttonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  secondaryButtonText: {
+    color: "#e2e8f0",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  subtleButtonText: {
+    color: "#64748b",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  mtLg: { marginTop: 20 },
+  mtMd: { marginTop: 15 },
+  topControls: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    alignItems: "center",
+  },
+  bottomControls: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingHorizontal: 30,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  iconButtonContainer: {
+    padding: 10,
+    borderRadius: 30,
+    backgroundColor: "rgba(0,0,0,0.3)",
+  },
+  captureButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 4,
+    borderColor: "rgba(255,255,255,0.5)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  captureButtonInner: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: "white",
+  },
+});

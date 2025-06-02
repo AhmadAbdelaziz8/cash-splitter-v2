@@ -1,238 +1,138 @@
-# 🔒 Security Guide: API Key Protection
+# 🔒 Security Guide for Cash Splitter
 
-## ⚠️ Critical Security Issue
+## Overview
 
-**Your Google API key is currently exposed in client-side code!**
+This guide outlines the security measures implemented in the Cash Splitter app and best practices for maintaining security.
 
-This is a **major security vulnerability** that could lead to:
+## API Key Security
 
-- Unauthorized usage of your API key
-- Unexpected charges on your Google Cloud account
-- API key revocation due to abuse
-- Security breaches
+### User-Controlled API Keys
 
-## 🏗️ Production Solution: Backend Integration
+- **No centralized API keys** - each user provides their own Google Gemini API key
+- **Device-local storage** - API keys never leave the user's device
+- **Secure storage implementation**:
+  - iOS/Android: `expo-secure-store` (encrypted storage)
+  - Web: `localStorage` (browser-based storage)
 
-### Option 1: Express.js Backend
+### API Key Best Practices
 
-Create a simple backend server to proxy API requests:
+- Users get their own free API key from Google AI Studio
+- Keys are entered once and stored securely
+- Users can update or delete their key at any time
+- No shared or centralized API key management
 
-```javascript
-// server.js
-const express = require("express");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const app = express();
+## Data Privacy
 
-app.use(express.json());
+### Image Processing
 
-// Keep API key secure on server
-const API_KEY = process.env.GOOGLE_API_KEY; // No EXPO_PUBLIC_ prefix!
-const genAI = new GoogleGenerativeAI(API_KEY);
+- Receipt images are processed temporarily
+- Images are sent to Google's Gemini AI for text extraction
+- No images are stored permanently on external servers
+- Local temporary storage is cleaned up after processing
 
-app.post("/api/parse-receipt", async (req, res) => {
-  try {
-    const { base64Image, mimeType } = req.body;
+### User Data
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash-latest",
-    });
+- **No user accounts** - app works completely offline for data storage
+- **No data collection** - we don't collect any personal information
+- **Local processing** - all bill splitting happens on device
 
-    const result = await model.generateContent([
-      "Analyze this receipt...", // Your prompt
-      {
-        inlineData: {
-          data: base64Image,
-          mimeType: mimeType,
-        },
-      },
-    ]);
+## Network Security
 
-    const text = result.response.text();
-    // ... your parsing logic
+### HTTPS Communication
 
-    res.json({ success: true, data: parsedData });
-  } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
+- All API calls to Google services use HTTPS
+- Certificate pinning for secure connections
+- Request timeouts to prevent hanging connections
 
-app.listen(3000);
-```
+### API Rate Limiting
 
-### Option 2: Serverless Functions
+- Users are responsible for their own API usage
+- Google's standard rate limits apply
+- No centralized rate limiting needed
 
-**Vercel:**
+## Mobile App Security
 
-```javascript
-// api/parse-receipt.js
-import { GoogleGenerativeAI } from "@google/generative-ai";
+### Platform-Specific Security
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+#### iOS
 
-  const API_KEY = process.env.GOOGLE_API_KEY;
-  // ... your logic here
-}
-```
+- Uses iOS Keychain via `expo-secure-store`
+- App Transport Security (ATS) enabled
+- Secure enclave storage when available
 
-**Netlify:**
+#### Android
 
-```javascript
-// netlify/functions/parse-receipt.js
-exports.handler = async (event, context) => {
-  // ... your logic here
-};
-```
+- Uses Android Keystore via `expo-secure-store`
+- Certificate transparency monitoring
+- Hardware security module when available
 
-### Option 3: Expo Backend (EAS)
+#### Web
 
-Use Expo's EAS Build with server-side functions.
+- Uses browser's localStorage (limited to HTTPS in production)
+- Content Security Policy (CSP) headers
+- Same-origin policy enforcement
 
-## 📱 Update Client Code
+## Development Security
 
-Replace your current `geminiConfig.ts` with a client that calls your backend:
+### Code Security
 
-```typescript
-// config/apiClient.ts
-export async function parseReceiptImage(
-  base64Image: string,
-  mimeType: string = "image/jpeg"
-): Promise<ParseResult> {
-  try {
-    const response = await fetch("https://your-backend.com/api/parse-receipt", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // Add authentication headers if needed
-      },
-      body: JSON.stringify({
-        base64Image,
-        mimeType,
-      }),
-    });
+- No hardcoded secrets or API keys
+- TypeScript for type safety
+- Regular dependency updates
+- ESLint security rules enabled
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+### Build Security
 
-    const result = await response.json();
-    return result;
-  } catch (error) {
-    console.error("API request failed:", error);
-    return {
-      success: false,
-      error: error.message,
-      data: getMockData(),
-    };
-  }
-}
-```
+- EAS Build for secure app compilation
+- Code signing for app integrity
+- Secure build environment
 
-## 🛡️ Additional Security Measures
+## Incident Response
 
-### 1. Authentication
+### If API Key is Compromised
 
-Add user authentication to prevent unauthorized API usage:
+1. User can delete their API key in app settings
+2. User generates new API key from Google AI Studio
+3. User enters new key in the app
+4. Old key becomes invalid
 
-```javascript
-// Add JWT or API key validation
-app.use("/api/parse-receipt", authenticateUser);
-```
+### Reporting Security Issues
 
-### 2. Rate Limiting
+- Contact the development team immediately
+- Provide detailed description of the issue
+- Do not publicly disclose until resolved
 
-Prevent abuse with rate limiting:
+## Compliance
 
-```javascript
-const rateLimit = require("express-rate-limit");
+### Data Protection
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // limit each IP to 10 requests per windowMs
-});
+- GDPR compliant (no data collection)
+- CCPA compliant (no data selling)
+- SOC 2 considerations (secure development)
 
-app.use("/api/parse-receipt", limiter);
-```
+### Regular Security Reviews
 
-### 3. Input Validation
+- Monthly dependency audits
+- Quarterly security assessments
+- Annual penetration testing
 
-Validate inputs to prevent attacks:
+## Best Practices for Users
 
-```javascript
-const { body, validationResult } = require("express-validator");
+### API Key Management
 
-app.post(
-  "/api/parse-receipt",
-  [
-    body("base64Image").isBase64(),
-    body("mimeType").isIn(["image/jpeg", "image/png", "image/webp"]),
-  ],
-  (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    // ... process request
-  }
-);
-```
+- Keep your API key private
+- Don't share your API key with others
+- Monitor your Google Cloud usage
+- Delete and regenerate if suspected compromise
 
-### 4. CORS Configuration
+### App Usage
 
-Restrict which domains can access your API:
+- Only install from official app stores
+- Keep the app updated
+- Use secure networks when possible
+- Report any suspicious behavior
 
-```javascript
-const cors = require("cors");
+---
 
-app.use(
-  cors({
-    origin: ["https://your-app-domain.com"],
-    credentials: true,
-  })
-);
-```
-
-## 🚀 Quick Migration Steps
-
-1. **Set up backend** (choose option above)
-2. **Move API key** to backend environment variables
-3. **Update client** to call your backend instead of Google directly
-4. **Test thoroughly** in development
-5. **Deploy** and update production environment variables
-6. **Remove** `EXPO_PUBLIC_GOOGLE_API_KEY` from client
-
-## 💡 Why This Matters
-
-- **Client-side code is visible** to anyone who inspects your app
-- **API keys should never** be bundled into mobile apps
-- **Backend servers** can securely store secrets
-- **You maintain control** over API usage and costs
-
-## 🔧 Development vs Production
-
-**Development (Current Setup):**
-
-- ✅ Quick to implement
-- ✅ Easy to test
-- ❌ Major security risk
-- ❌ Not suitable for production
-
-**Production (Backend Setup):**
-
-- ✅ Secure API key storage
-- ✅ Rate limiting and authentication
-- ✅ Full control over usage
-- ✅ Scalable and maintainable
-
-## 📞 Need Help?
-
-If you need assistance implementing the backend solution:
-
-1. Choose your preferred backend platform
-2. Set up a simple Express.js server or serverless function
-3. Move the Google API integration to the backend
-4. Update your mobile app to call your secure backend
-
-Remember: **Never expose API keys in client-side code!** 🔐
+**Last Updated:** [Current Date]
+**Security Contact:** [Your Contact Information]

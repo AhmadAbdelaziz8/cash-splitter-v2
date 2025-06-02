@@ -7,6 +7,7 @@ import {
 } from "@/config/geminiConfig";
 import { API, MESSAGES } from "@/constants/AppConstants";
 import { errorHandler, ErrorType } from "@/utils/errorUtils";
+import { getApiKey } from "@/services/apiKeyService"; // Add import for user's API key
 
 // LLMReceiptItem can be kept if the initial parsing step from LLM is slightly different
 // before validation, but validateParsedData should output items conforming to ReceiptItem.
@@ -24,17 +25,10 @@ interface ParsedDataFromLLMForValidation {
 }
 
 class ReceiptService {
-  private apiKey: string | undefined;
   private genAI: GoogleGenerativeAI | null = null;
   private receiptSchema: any;
 
   constructor() {
-    this.apiKey = process.env.EXPO_PUBLIC_GOOGLE_API_KEY;
-    if (this.apiKey) {
-      this.genAI = new GoogleGenerativeAI(this.apiKey);
-    }
-    // Schema now expects quantity to be potentially null from LLM, validation will fix it.
-    // Service can be number or string.
     this.receiptSchema = {
       type: SchemaType.OBJECT,
       properties: {
@@ -53,9 +47,6 @@ class ReceiptService {
         total: { type: SchemaType.NUMBER },
         tax: { type: SchemaType.NUMBER, nullable: true },
         service: {
-          // Corrected: Specify a single primary type. Validation will handle parsing.
-          // The prompt guides the LLM to send numbers for fixed amounts and strings for percentages.
-          // String is a safe bet for schema as numbers can be represented as strings.
           type: SchemaType.STRING,
           nullable: true,
           description:
@@ -66,7 +57,6 @@ class ReceiptService {
     };
   }
 
-  // getMockData should return data conforming to config/geminiConfig.ts:ParsedReceiptData
   private getMockData(): ParsedReceiptData {
     return {
       items: [
@@ -81,7 +71,6 @@ class ReceiptService {
     };
   }
 
-  // Validates the raw data from LLM and transforms it to ParsedReceiptData
   private validateParsedData(data: any): {
     isValid: boolean;
     error?: string;
@@ -208,10 +197,9 @@ class ReceiptService {
     base64Image: string,
     mimeType: string = API.DEFAULT_MIME_TYPE
   ): Promise<ParseResult> {
-    // Return type is now ParseResult from geminiConfig
-    console.trace("parseReceiptImage called in ReceiptService");
+    const apiKey = await getApiKey();
 
-    if (!this.apiKey || !this.genAI) {
+    if (!apiKey) {
       errorHandler.logError(
         ErrorType.API,
         MESSAGES.NO_API_KEY,
@@ -220,10 +208,13 @@ class ReceiptService {
       );
       return {
         success: false,
-        error: MESSAGES.NO_API_KEY,
-        data: this.getMockData(), // Ensure mock data also conforms
+        error:
+          "Google API Key not found. Please set your API key in the app settings.",
+        data: null as any, // No mock data when API key is missing
       };
     }
+
+    this.genAI = new GoogleGenerativeAI(apiKey);
 
     try {
       const model = this.genAI.getGenerativeModel({ model: API.GEMINI_MODEL });
@@ -238,7 +229,7 @@ class ReceiptService {
       const imagePart: Part = {
         inlineData: { data: cleanBase64, mimeType: mimeType },
       };
-      const prompt = this.buildPrompt();
+      const prompt = this.buildPrompt(); // Restored original prompt
 
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [imagePart, { text: prompt }] }],
@@ -250,21 +241,19 @@ class ReceiptService {
 
       const response = result.response;
       const text = response.text().trim();
-      const parsedJson = this.parseAPIResponse(text); // This is 'any'
+      const parsedJson = this.parseAPIResponse(text);
 
-      const validationResult = this.validateParsedData(parsedJson); // Returns { validatedData?: ParsedReceiptData }
+      const validationResult = this.validateParsedData(parsedJson);
 
       if (!validationResult.isValid || !validationResult.validatedData) {
         throw new Error(
           validationResult.error || "Invalid data structure after validation"
         );
       }
-      // validationResult.validatedData is now ParsedReceiptData from geminiConfig
       return { success: true, data: validationResult.validatedData };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown processing error";
-      // Check if error is an instance of Error before passing to errorHandler
       const errorInstance = error instanceof Error ? error : undefined;
       errorHandler.logError(
         ErrorType.API,
@@ -275,12 +264,13 @@ class ReceiptService {
       return {
         success: false,
         error: errorMessage,
-        data: this.getMockData(),
+        data: this.getMockData(), // Keep mock data for other errors, but not for missing API key
       };
     }
   }
 
   private buildPrompt(): string {
+    // Original detailed prompt is preserved here but not used if the simplified one is active above
     return `Analyze this receipt image.
 Extract all distinct items with their individual prices and quantities if available.
 Identify any overall tax amount.
