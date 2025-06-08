@@ -23,7 +23,14 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="camera" options={{ headerShown: false }} />
           <Stack.Screen name="preview" options={{ headerShown: false }} />
-          <Stack.Screen name="EditItemsScreen" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="EditItemsScreen"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="ShareLinkScreen"
+            options={{ headerShown: false }}
+          />
         </Stack>
         <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
       </ThemeProvider>

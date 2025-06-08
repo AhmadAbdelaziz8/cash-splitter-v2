@@ -99,8 +99,9 @@ export default function PreviewScreen() {
       >
         <Ionicons name="arrow-back-outline" size={28} color="#e2e8f0" />
       </TouchableOpacity>
-
+      {/* image preview container */}
       <View style={styles.imagePreviewContainer}>
+        
         <Image
           source={{ uri: imageUri }}
           style={styles.image}
