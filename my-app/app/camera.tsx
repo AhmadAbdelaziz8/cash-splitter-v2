@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
+
 import {
   View,
   Text,
@@ -10,19 +10,25 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
+
 import * as FileSystem from "expo-file-system";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CameraView, useCameraPermissions, CameraType } from "expo-camera";
+import { CameraView, CameraType } from "expo-camera";
+
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useReceipt } from "@/contexts/ReceiptContext";
+import { router } from "expo-router";
 
 export default function CameraScreen() {
   const insets = useSafeAreaInsets();
   const cameraRef = useRef<CameraView>(null);
   const [facing, setFacing] = useState<CameraType>("back");
-  const [permission, requestPermission] = useCameraPermissions();
-  const [permissionStatus, setPermissionStatus] = useState<string>("unknown");
+  const [cameraPermissionStatus, setCameraPermissionStatus] =
+    useState<string>("unknown");
+  const [mediaLibraryPermissionStatus, setMediaLibraryPermissionStatus] =
+    useState<string>("unknown");
+
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { resetState } = useReceipt();
@@ -36,7 +42,9 @@ export default function CameraScreen() {
       }
       const imageDir = FileSystem.documentDirectory + "images/";
       await FileSystem.makeDirectoryAsync(imageDir, { intermediates: true });
-      const fileName = `cam_${Date.now()}_${originalUri.split("/").pop()}`;
+      const parts = originalUri.split("/");
+      const lastSegment = parts.pop() || `fallback_${Date.now()}.jpg`;
+      const fileName = `cam_${Date.now()}_${lastSegment}`;
       const newPersistentUri = imageDir + fileName;
       await FileSystem.copyAsync({
         from: originalUri,
@@ -44,32 +52,57 @@ export default function CameraScreen() {
       });
       return newPersistentUri;
     } catch (e) {
-      console.error("Error storing image temporarily:", e);
-      throw new Error(`Failed to store image: ${e instanceof Error ? e.message : String(e)}`);
+      throw new Error(
+        `Failed to store image: ${e instanceof Error ? e.message : String(e)}`
+      );
     }
   };
 
   useEffect(() => {
     resetState();
-    if (permission) {
-      setPermissionStatus(permission.granted ? "granted" : "denied");
-    }
-    const checkAndRequestPermission = async () => {
-      if (permission && !permission.granted && permission.canAskAgain) {
-        await requestCameraPermission();
+    const checkAndRequestAllPermissions = async () => {
+      const cameraResult = await ImagePicker.getCameraPermissionsAsync();
+      const mediaLibraryResult =
+        await ImagePicker.getMediaLibraryPermissionsAsync();
+
+      setCameraPermissionStatus(cameraResult.granted ? "granted" : "denied");
+      setMediaLibraryPermissionStatus(
+        mediaLibraryResult.granted ? "granted" : "denied"
+      );
+
+      if (!cameraResult.granted || !mediaLibraryResult.granted) {
+        if (cameraResult.canAskAgain || mediaLibraryResult.canAskAgain) {
+          await requestAllPermissions();
+        } else {
+          Alert.alert(
+            "Permissions Required",
+            "This app needs camera and photo library access to function. Please grant permission in your device settings.",
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Open Settings", onPress: () => Linking.openSettings() },
+            ]
+          );
+        }
       }
     };
-    checkAndRequestPermission();
-  }, [permission]);
+    checkAndRequestAllPermissions();
+  }, []);
 
-  const requestCameraPermission = async () => {
+  const requestAllPermissions = async () => {
     try {
-      const result = await requestPermission();
-      setPermissionStatus(result.granted ? "granted" : "denied");
-      if (!result.granted) {
+      const cameraResult = await ImagePicker.requestCameraPermissionsAsync();
+      const mediaLibraryResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+      setCameraPermissionStatus(cameraResult.granted ? "granted" : "denied");
+      setMediaLibraryPermissionStatus(
+        mediaLibraryResult.granted ? "granted" : "denied"
+      );
+
+      if (!cameraResult.granted || !mediaLibraryResult.granted) {
         Alert.alert(
-          "Camera Permission Required",
-          "This app needs camera access to function. Please grant permission in your device settings.",
+          "Permissions Required",
+          "This app needs camera and photo library access to function. Please grant permission in your device settings.",
           [
             { text: "Cancel", style: "cancel" },
             { text: "Open Settings", onPress: () => Linking.openSettings() },
@@ -77,9 +110,9 @@ export default function CameraScreen() {
         );
       }
     } catch (error) {
-      console.error("Error requesting camera permission:", error);
-      setPermissionStatus("error");
-      Alert.alert("Error", "Could not request camera permission.");
+      Alert.alert("Error", "Could not request all necessary permissions.");
+      setCameraPermissionStatus("error");
+      setMediaLibraryPermissionStatus("error");
     }
   };
 
@@ -93,29 +126,43 @@ export default function CameraScreen() {
   };
 
   const handleCapturePhoto = async () => {
-    if (!isCameraReady || !cameraRef.current || isProcessing) {
+    if (isProcessing) {
       return;
     }
     setIsProcessing(true);
     try {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: Platform.OS === 'web' ? 0.9 : 0.7,
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.7,
         base64: false,
-        exif: false,
+        allowsEditing: false,
+        aspect: [4, 3],
       });
 
-      if (photo?.uri) {
+      let photo = null;
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        photo = result.assets[0];
+      }
+
+      if (photo && photo.uri) {
         const persistentUri = await storeImageTemporarily(photo.uri);
         router.push({
           pathname: "/preview",
           params: { imageUri: persistentUri },
         });
       } else {
-        Alert.alert("Capture Failed", "No image data was received from the camera.");
+        Alert.alert(
+          "Capture Failed",
+          "No image data or URI was received from the camera."
+        );
       }
     } catch (error) {
-      console.error("Capture Error:", error);
-      Alert.alert("Camera Error", `Failed to take picture: ${error instanceof Error ? error.message : "Unknown error"}`);
+      Alert.alert(
+        "Camera Error",
+        `Failed to take picture: ${
+          error instanceof Error ? error.message : JSON.stringify(error)
+        }`
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -151,58 +198,78 @@ export default function CameraScreen() {
           params: { imageUri: persistentUri },
         });
       } else if (result.canceled) {
+        // User cancelled image selection
       }
     } catch (error) {
-      console.error("Gallery Error:", error);
-      Alert.alert("Gallery Error", `Failed to access photo library: ${error instanceof Error ? error.message : "Unknown error"}`);
+      Alert.alert(
+        "Gallery Error",
+        `Failed to access photo library: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     } finally {
       setIsProcessing(false);
     }
   };
 
   const renderLoadingView = (message: string) => (
-    <View style={[styles.centeredView, styles.darkBg]}>
+    <View style={[styles.centered, styles.container]}>
       <ActivityIndicator size="large" color="#38bdf8" />
       <Text style={styles.loadingText}>{message}</Text>
     </View>
   );
 
+  const allPermissionsGranted =
+    cameraPermissionStatus === "granted" &&
+    mediaLibraryPermissionStatus === "granted";
+  const canAskAgain =
+    cameraPermissionStatus === "denied" ||
+    mediaLibraryPermissionStatus === "denied";
+
   if (isProcessing) {
     return renderLoadingView("Processing Image...");
   }
 
-  if (!permission) {
-    return renderLoadingView("Loading Camera Permissions...");
-  }
-
-  if (!permission.granted) {
+  if (!allPermissionsGranted) {
     return (
-      <View style={[styles.centeredView, styles.darkBg, styles.paddingLg]}>
-        <Ionicons name="alert-circle-outline" size={60} style={styles.permissionIcon} />
-        <Text style={styles.permissionTitle}>
-          Camera Access Needed
-        </Text>
-        <Text style={styles.permissionText}>
-          This app requires camera permission to scan receipts. Please grant access in your device settings.
+      <View style={[styles.centered, styles.container, styles.padding]}>
+        <Ionicons
+          name="alert-circle-outline"
+          size={60}
+          style={styles.errorIcon}
+        />
+        <Text style={styles.errorTitle}>Permissions Needed</Text>
+        <Text style={styles.errorText}>
+          This app requires camera and photo library access to scan receipts.
+          Please grant access in your device settings.
         </Text>
         <Text style={styles.permissionStatusText}>
-          Current status: {permissionStatus}
+          Camera status: {cameraPermissionStatus}, Photo Library status:{" "}
+          {mediaLibraryPermissionStatus}
         </Text>
         <TouchableOpacity
-          style={[styles.button, styles.primaryButton, styles.mtLg]}
-          onPress={requestCameraPermission}
-          disabled={!permission.canAskAgain}
+          style={[styles.buttonBase, styles.primaryButton, styles.spacingTop]}
+          onPress={requestAllPermissions}
+          disabled={!canAskAgain}
         >
-          <Text style={styles.buttonText}>Grant Permission</Text>
+          <Text style={styles.buttonText}>Grant Permissions</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.button, styles.secondaryButton, styles.mtMd]}
+          style={[
+            styles.buttonBase,
+            styles.secondaryButton,
+            styles.spacingTopSmall,
+          ]}
           onPress={() => Linking.openSettings()}
         >
           <Text style={styles.secondaryButtonText}>Open Settings</Text>
         </TouchableOpacity>
-         <TouchableOpacity
-          style={[styles.button, styles.subtleButton, styles.mtMd]}
+        <TouchableOpacity
+          style={[
+            styles.buttonBase,
+            styles.subtleButton,
+            styles.spacingTopSmall,
+          ]}
           onPress={() => router.back()}
         >
           <Text style={styles.subtleButtonText}>Go Back</Text>
@@ -212,7 +279,7 @@ export default function CameraScreen() {
   }
 
   return (
-    <View style={[styles.container, styles.darkBg]}>
+    <View style={[styles.container]}>
       <CameraView
         ref={cameraRef}
         style={StyleSheet.absoluteFill}
@@ -229,7 +296,9 @@ export default function CameraScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.bottomControls, { paddingBottom: insets.bottom + 20 }]}>
+      <View
+        style={[styles.bottomControls, { paddingBottom: insets.bottom + 20 }]}
+      >
         <TouchableOpacity
           style={styles.iconButtonContainer}
           onPress={handleSelectFromGallery}
@@ -241,7 +310,7 @@ export default function CameraScreen() {
         <TouchableOpacity
           style={styles.captureButton}
           onPress={handleCapturePhoto}
-          disabled={!isCameraReady || isProcessing}
+          disabled={isProcessing}
         >
           {isProcessing ? (
             <ActivityIndicator color="#334155" size="small" />
@@ -265,58 +334,56 @@ export default function CameraScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  darkBg: {
     backgroundColor: "#0f172a",
   },
-  centeredView: {
-    flex: 1,
+  centered: {
     justifyContent: "center",
     alignItems: "center",
   },
-  paddingLg: {
+  padding: {
     padding: 20,
   },
   loadingText: {
-    marginTop: 15,
-    fontSize: 18,
-    color: "#cbd5e1",
+    fontSize: 16,
+    color: "#94a3b8",
+    textAlign: "center",
   },
-  permissionIcon: {
+  errorIcon: {
     color: "#f87171",
-    marginBottom: 20,
+    marginBottom: 15,
   },
-  permissionTitle: {
-    fontSize: 24,
+  errorTitle: {
+    fontSize: 22,
     fontWeight: "bold",
     color: "#f1f5f9",
     textAlign: "center",
     marginBottom: 10,
   },
-  permissionText: {
+  errorText: {
     fontSize: 16,
     color: "#94a3b8",
     textAlign: "center",
-    marginBottom: 10,
-  },
-  permissionStatusText: {
-    fontSize: 14,
-    color: "#64748b",
-    textAlign: "center",
+    lineHeight: 22,
     marginBottom: 20,
   },
-  button: {
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 8,
+  buttonBase: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   primaryButton: {
     backgroundColor: "#3b82f6",
   },
   secondaryButton: {
-    backgroundColor: "#334155",
+    backgroundColor: "#475569",
   },
   subtleButton: {
     backgroundColor: "transparent",
@@ -324,22 +391,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   buttonText: {
-    color: "white",
+    color: "#ffffff",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
   },
   secondaryButtonText: {
     color: "#e2e8f0",
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   subtleButtonText: {
     color: "#64748b",
     fontSize: 16,
     fontWeight: "500",
   },
-  mtLg: { marginTop: 20 },
-  mtMd: { marginTop: 15 },
+  spacingTop: { marginTop: 20 },
+  spacingTopSmall: { marginTop: 12 },
   topControls: {
     position: "absolute",
     top: 0,
@@ -386,5 +453,11 @@ const styles = StyleSheet.create({
     height: 58,
     borderRadius: 29,
     backgroundColor: "white",
+  },
+  permissionStatusText: {
+    color: "#94a3b8",
+    fontSize: 16,
+    fontWeight: "500",
+    marginTop: 10,
   },
 });

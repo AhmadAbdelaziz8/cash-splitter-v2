@@ -38,7 +38,7 @@ const EditItemsScreen: React.FC = () => {
     isProcessing: contextIsProcessing,
     processingError,
     processReceiptImage,
-    clearError,
+    setProcessingError,
   } = useReceipt();
 
   const [itemModalVisible, setItemModalVisible] = useState(false);
@@ -111,7 +111,7 @@ const EditItemsScreen: React.FC = () => {
   };
 
   const handleRetryProcess = () => {
-    clearError();
+    setProcessingError(null);
     if (imageBase64) {
       setInitialLoadAttempted(false);
       setIsProcessingLocally(true);
@@ -130,8 +130,8 @@ const EditItemsScreen: React.FC = () => {
   };
 
   const handleGoBackToHome = () => {
-    clearError();
-    router.replace("/(tabs)/");
+    setProcessingError(null);
+    router.replace("/(tabs)");
   };
 
   const currentItemsSubtotal = useMemo(() => {
@@ -298,8 +298,7 @@ const EditItemsScreen: React.FC = () => {
         )}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={
-          !isLoading &&
-          !processingError && (
+          !isLoading && !processingError ? (
             <View style={styles.centeredMessageContainer}>
               <Ionicons
                 name="document-text-outline"
@@ -310,7 +309,7 @@ const EditItemsScreen: React.FC = () => {
                 No items yet. Add manually or scan a new receipt.
               </Text>
             </View>
-          )
+          ) : null
         }
         ListHeaderComponent={() => (
           <Text style={styles.listHeader}>Detected Items</Text>

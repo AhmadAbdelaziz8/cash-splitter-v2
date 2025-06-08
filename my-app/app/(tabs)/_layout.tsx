@@ -36,7 +36,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index" // This should match your home screen file name in (tabs) dir
+        name="index" 
         options={{
           title: "Home",
           tabBarIcon: ({ color, size, focused }) => (
@@ -48,21 +48,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      {/* Add other Tabs.Screen here if you have more tabs */}
-      {/* For example, if you had a settings tab: */}
-      {/* <Tabs.Screen 
-        name="settings" 
-        options={{
-          title: "Settings",
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons 
-              name={focused ? "settings" : "settings-outline"} 
-              size={size} 
-              color={focused ? activeIconColor : iconColor} 
-            />
-          ),
-        }}
-      /> */}
     </Tabs>
   );
 }

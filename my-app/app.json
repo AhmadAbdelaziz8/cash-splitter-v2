@@ -44,15 +44,15 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Cash Splitter to access your camera to scan receipts",
-          "microphonePermission": false,
-          "recordAudioAndroid": false
+          "cameraPermission": "Allow cash-splitter-v2 to access your camera to scan receipts",
+          "microphonePermission": true,
+          "recordAudioAndroid": true
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Cash Splitter to access your photo library to select receipt images"
+          "photosPermission": "Allow cash-splitter-v2 to access your photo library to select receipt images"
         }
       ],
       "expo-secure-store"
