@@ -1,28 +1,33 @@
 // Global type definitions for the Cash Splitter app
 
-// This is what the ReceiptContext uses internally after processing
-export interface ContextReceiptItem {
-  id: string;
-  name: string; // Mapped from itemName
-  price: number; // Mapped from itemPrice
-  quantity: number; // Added
-  selected: boolean;
-  assignedTo: string[];
-}
-
-// This is what the LLM service is expected to parse and return
-// It matches ParsedReceiptDataByLLM in receiptService.ts and GeminiParsedReceiptData in ReceiptContext
+// ===== RECEIPT ITEM TYPES =====
+// Base interface for receipt items as returned by LLM
 export interface LLMReceiptItem {
   itemName: string;
   itemPrice: number;
   quantity?: number;
 }
 
+// Internal receipt item used by ReceiptContext
+export interface ReceiptItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
+// Receipt item with selection state for UI components
+export interface ContextReceiptItem extends ReceiptItem {
+  selected: boolean;
+  assignedTo: string[];
+}
+
+// ===== RECEIPT DATA TYPES =====
 export interface ParsedReceiptData {
-  items: LLMReceiptItem[]; // Uses the LLM item structure
+  items: LLMReceiptItem[];
   total: number;
-  tax?: number; // Added optional tax
-  service?: number; // Added optional service
+  tax?: number;
+  service?: number | string;
 }
 
 export interface ParseResult {
@@ -31,20 +36,21 @@ export interface ParseResult {
   error?: string;
 }
 
+// ===== BILL SPLITTING TYPES =====
 export interface PersonSummary {
   name: string;
   amount: number;
   items: string[];
 }
 
-// Camera related types
+// ===== CAMERA TYPES =====
 export interface CameraError {
   code: string;
   message: string;
   recoverable: boolean;
 }
 
-// API response types
+// ===== API TYPES =====
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -52,7 +58,7 @@ export interface ApiResponse<T> {
   timestamp: number;
 }
 
-// Navigation parameter types
+// ===== NAVIGATION TYPES =====
 export interface PreviewScreenParams {
   imageUri: string;
 }
@@ -60,3 +66,25 @@ export interface PreviewScreenParams {
 export interface CameraScreenParams {
   retryCount?: number;
 }
+
+// ===== UI COMPONENT TYPES =====
+export interface ButtonProps {
+  children: React.ReactNode;
+  variant?: "primary" | "secondary" | "ghost" | "destructive";
+  size?: "sm" | "md" | "lg" | "xl";
+  fullWidth?: boolean;
+  loading?: boolean;
+  loadingText?: string;
+}
+
+export interface ModalProps {
+  visible: boolean;
+  onClose: () => void;
+}
+
+// ===== THEME TYPES =====
+export type ColorScheme = "light" | "dark" | null;
+export type ThemeColors = {
+  light: string;
+  dark: string;
+};

@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  StyleSheet,
 } from "react-native";
-import { useReceipt, ReceiptItem } from "@/contexts/ReceiptContext";
+import { useReceipt } from "@/contexts/ReceiptContext";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { ReceiptItem } from "@/types";
 
 import ItemEditModal from "@/components/edit-items/ItemEditModal";
 import TaxEditModal from "@/components/edit-items/TaxEditModal";
@@ -44,10 +44,8 @@ const EditItemsScreen: React.FC = () => {
   const [itemModalVisible, setItemModalVisible] = useState(false);
   const [taxModalVisible, setTaxModalVisible] = useState(false);
   const [serviceModalVisible, setServiceModalVisible] = useState(false);
-
   const [currentItemForEdit, setCurrentItemForEdit] =
     useState<ReceiptItem | null>(null);
-
   const [initialLoadAttempted, setInitialLoadAttempted] = useState(false);
   const [isProcessingLocally, setIsProcessingLocally] = useState(true);
 
@@ -142,14 +140,14 @@ const EditItemsScreen: React.FC = () => {
 
   if (isLoading && !processingError) {
     return (
-      <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator
-          size="large"
-          color="#3b82f6"
-          style={styles.spacingBottom}
-        />
-        <Text style={styles.loadingTitle}>Processing Your Receipt...</Text>
-        <Text style={styles.loadingText}>Extracting items, just a moment!</Text>
+      <View className="flex-1 bg-white dark:bg-slate-900 items-center justify-center">
+        <ActivityIndicator size="large" color="#3b82f6" className="mb-4" />
+        <Text className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+          Processing Your Receipt...
+        </Text>
+        <Text className="text-base text-slate-600 dark:text-slate-400 text-center px-6">
+          Extracting items, just a moment!
+        </Text>
       </View>
     );
   }
@@ -157,113 +155,35 @@ const EditItemsScreen: React.FC = () => {
   if (processingError) {
     const isApiKeyError = processingError.includes("API Key not found");
     return (
-      <View style={[styles.container, styles.centered, styles.padding]}>
-        <View style={styles.errorContainer}>
+      <View className="flex-1 bg-white dark:bg-slate-900 items-center justify-center p-6">
+        <View className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-8 items-center max-w-sm w-full">
           <Ionicons
             name="alert-circle-outline"
             size={48}
-            style={styles.errorIcon}
+            color={isApiKeyError ? "#dc2626" : "#ef4444"}
+            className="mb-4"
           />
-          <Text style={styles.errorTitle}>
+          <Text className="text-xl font-bold text-red-800 dark:text-red-200 mb-2 text-center">
             {isApiKeyError ? "API Key Required" : "Processing Error"}
           </Text>
-          <Text style={styles.errorText}>
+          <Text className="text-red-700 dark:text-red-300 text-center mb-6 leading-6">
             {isApiKeyError
               ? "A valid Google Gemini API Key is needed to process receipts. Please set it up in the app settings."
               : processingError}
           </Text>
-          {isApiKeyError ? (
-            <TouchableOpacity
-              style={[
-                styles.buttonBase,
-                styles.primaryButton,
-                styles.spacingTop,
-              ]}
-              onPress={handleGoBackToHome}
-            >
-              <Ionicons
-                name="settings-outline"
-                size={20}
-                color="white"
-                style={styles.buttonIcon}
-              />
-              <Text style={styles.buttonText}>Go to Settings</Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={[
-                styles.buttonBase,
-                styles.primaryButton,
-                styles.spacingTop,
-              ]}
-              onPress={handleRetryProcess}
-            >
-              <Ionicons
-                name="refresh-outline"
-                size={20}
-                color="white"
-                style={styles.buttonIcon}
-              />
-              <Text style={styles.buttonText}>Try Again</Text>
-            </TouchableOpacity>
-          )}
           <TouchableOpacity
-            style={[
-              styles.buttonBase,
-              styles.secondaryButton,
-              styles.spacingTopSmall,
-            ]}
-            onPress={() => router.replace("/camera")}
+            className="bg-blue-600 dark:bg-blue-700 px-6 py-3 rounded-xl flex-row items-center"
+            onPress={isApiKeyError ? handleGoBackToHome : handleRetryProcess}
           >
             <Ionicons
-              name="camera-outline"
-              size={20}
-              style={styles.secondaryButtonIcon}
-            />
-            <Text style={styles.secondaryButtonText}>Capture New Image</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
-  if (!isLoading && items.length === 0 && !processingError && imageBase64) {
-    return (
-      <View style={[styles.container, styles.centered, styles.padding]}>
-        <View style={styles.errorContainer}>
-          <Ionicons name="sad-outline" size={48} style={styles.emptyIcon} />
-          <Text style={styles.errorTitle}>No Items Found</Text>
-          <Text style={styles.errorText}>
-            We couldn't find any items on the receipt, or there was an issue
-            during processing. You can try capturing the image again or add
-            items manually.
-          </Text>
-          <TouchableOpacity
-            style={[styles.buttonBase, styles.primaryButton, styles.spacingTop]}
-            onPress={() => router.replace("/camera")}
-          >
-            <Ionicons
-              name="camera-outline"
+              name={isApiKeyError ? "settings-outline" : "refresh-outline"}
               size={20}
               color="white"
-              style={styles.buttonIcon}
+              className="mr-2"
             />
-            <Text style={styles.buttonText}>Recapture Image</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.buttonBase,
-              styles.secondaryButton,
-              styles.spacingTopSmall,
-            ]}
-            onPress={openItemModalToAdd}
-          >
-            <Ionicons
-              name="add-circle-outline"
-              size={20}
-              style={styles.secondaryButtonIcon}
-            />
-            <Text style={styles.secondaryButtonText}>Add Item Manually</Text>
+            <Text className="text-white font-semibold">
+              {isApiKeyError ? "Go to Settings" : "Retry Processing"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -271,292 +191,117 @@ const EditItemsScreen: React.FC = () => {
   }
 
   return (
-    <View style={[styles.container, { paddingBottom: bottom }]}>
-      {/* Floating Back Button */}
-      <TouchableOpacity
-        style={[
-          styles.floatingBackButton,
-          { top: bottom > 0 ? bottom + 0 : 15 },
-        ]} // Adjusted top positioning slightly differently from preview for potentially different safe area inset
-        onPress={() => router.replace("/camera")}
-        disabled={isLoading}
-      >
-        <Ionicons name="arrow-back-outline" size={28} color="#e2e8f0" />
-      </TouchableOpacity>
-
-      <FlatList
-        style={styles.list}
-        data={items}
-        renderItem={({ item }) => (
-          <ReceiptListItem
-            item={item}
-            isSelected={userSelectedItemIds.includes(item.id)}
-            onToggleSelection={() => toggleUserItemSelection(item.id)}
-            onEdit={() => openItemModalToEdit(item)}
-            onDelete={() => handleDeleteItem(item.id)}
-          />
-        )}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={
-          !isLoading && !processingError ? (
-            <View style={styles.centeredMessageContainer}>
-              <Ionicons
-                name="document-text-outline"
-                size={40}
-                style={styles.emptyListIcon}
-              />
-              <Text style={styles.emptyListText}>
-                No items yet. Add manually or scan a new receipt.
-              </Text>
-            </View>
-          ) : null
-        }
-        ListHeaderComponent={() => (
-          <Text style={styles.listHeader}>Detected Items</Text>
-        )}
-        ListFooterComponent={() => (
-          <View style={styles.footerContainer}>
-            <ReceiptTotalsFooter
-              itemsSubtotal={currentItemsSubtotal}
-              tax={receiptTax}
-              serviceCharge={serviceChargeValue}
-              originalReceiptTotal={originalReceiptTotal}
-              grandTotal={receiptTotal}
-              onEditTax={() => setTaxModalVisible(true)}
-              onEditService={() => setServiceModalVisible(true)}
-            />
-          </View>
-        )}
-        contentContainerStyle={styles.listContentContainer}
-      />
-
-      <View
-        style={[
-          styles.actionButtonsContainer,
-          { paddingBottom: bottom > 0 ? bottom + 10 : 20, paddingTop: 10 },
-        ]}
-      >
-        <TouchableOpacity
-          style={[styles.buttonBase, styles.secondaryButton, styles.flexButton]}
-          onPress={openItemModalToAdd}
-        >
-          <Ionicons
-            name="add-circle-outline"
-            size={20}
-            style={styles.secondaryButtonIcon}
-          />
-          <Text style={styles.secondaryButtonText}>Add Item</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.buttonBase,
-            styles.primaryButton,
-            styles.flexButton,
-            items.length === 0 && styles.disabledButton,
-          ]}
-          onPress={handleFinalize}
-          disabled={items.length === 0}
-        >
-          <Ionicons
-            name="share-social-outline"
-            size={20}
-            color="white"
-            style={styles.buttonIcon}
-          />
-          <Text style={styles.buttonText}>Finalize & Share</Text>
-        </TouchableOpacity>
+    <View className="flex-1 bg-slate-50 dark:bg-slate-900">
+      {/* Header */}
+      <View className="bg-white dark:bg-slate-800 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+        <View className="flex-row items-center justify-between">
+          <TouchableOpacity
+            onPress={() => router.back()}
+            className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700"
+          >
+            <Ionicons name="arrow-back" size={24} color="#64748b" />
+          </TouchableOpacity>
+          <Text className="text-lg font-semibold text-slate-900 dark:text-white">
+            Edit Receipt Items
+          </Text>
+          <TouchableOpacity
+            onPress={openItemModalToAdd}
+            className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900"
+          >
+            <Ionicons name="add" size={24} color="#3b82f6" />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {itemModalVisible && (
-        <ItemEditModal
-          isVisible={itemModalVisible}
-          onClose={() => setItemModalVisible(false)}
-          onSave={handleSaveItem}
-          item={currentItemForEdit}
+      {/* Items List */}
+      <View className="flex-1 px-4 py-2">
+        {items.length === 0 ? (
+          <View className="flex-1 items-center justify-center">
+            <Ionicons
+              name="receipt-outline"
+              size={64}
+              color="#94a3b8"
+              className="mb-4"
+            />
+            <Text className="text-xl font-semibold text-slate-600 dark:text-slate-400 mb-2">
+              No Items Found
+            </Text>
+            <Text className="text-slate-500 dark:text-slate-500 text-center mb-6">
+              Add items manually or retry processing your receipt.
+            </Text>
+            <TouchableOpacity
+              onPress={openItemModalToAdd}
+              className="bg-blue-600 dark:bg-blue-700 px-6 py-3 rounded-xl"
+            >
+              <Text className="text-white font-semibold">Add First Item</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <FlatList
+            data={items}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <ReceiptListItem
+                item={item}
+                isSelected={userSelectedItemIds.includes(item.id)}
+                onToggleSelection={toggleUserItemSelection}
+                onEdit={openItemModalToEdit}
+                onDelete={handleDeleteItem}
+              />
+            )}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 16 }}
+          />
+        )}
+      </View>
+
+      {/* Footer */}
+      <View style={{ paddingBottom: bottom }}>
+        <ReceiptTotalsFooter
+          itemsSubtotal={currentItemsSubtotal}
+          tax={receiptTax}
+          serviceCharge={serviceChargeValue}
+          originalReceiptTotal={originalReceiptTotal}
+          grandTotal={receiptTotal}
+          onEditTax={() => setTaxModalVisible(true)}
+          onEditService={() => setServiceModalVisible(true)}
         />
-      )}
-      {taxModalVisible && (
-        <TaxEditModal
-          isVisible={taxModalVisible}
-          onClose={() => setTaxModalVisible(false)}
-          onSave={updateReceiptTax}
-          currentTax={receiptTax}
-        />
-      )}
-      {serviceModalVisible && (
-        <ServiceEditModal
-          isVisible={serviceModalVisible}
-          onClose={() => setServiceModalVisible(false)}
-          onSave={updateServiceChargeValue}
-          currentService={serviceChargeValue}
-        />
-      )}
+        <View className="px-4 py-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+          <TouchableOpacity
+            onPress={handleFinalize}
+            className="bg-green-600 dark:bg-green-700 py-4 rounded-xl items-center"
+            disabled={items.length === 0}
+          >
+            <Text className="text-white font-bold text-lg">
+              Create Shareable Link
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Modals */}
+      <ItemEditModal
+        isVisible={itemModalVisible}
+        onClose={() => setItemModalVisible(false)}
+        onSave={handleSaveItem}
+        item={currentItemForEdit}
+      />
+
+      <TaxEditModal
+        isVisible={taxModalVisible}
+        currentTax={receiptTax}
+        onClose={() => setTaxModalVisible(false)}
+        onSave={updateReceiptTax}
+      />
+
+      <ServiceEditModal
+        isVisible={serviceModalVisible}
+        currentService={serviceChargeValue}
+        onClose={() => setServiceModalVisible(false)}
+        onSave={updateServiceChargeValue}
+      />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#0f172a",
-  },
-  floatingBackButton: {
-    position: "absolute",
-    left: 15,
-    // top is set dynamically
-    zIndex: 10,
-    backgroundColor: "rgba(30, 41, 59, 0.7)", // slate-800 with opacity
-    padding: 10,
-    borderRadius: 25, // Makes it circular
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  centered: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  padding: {
-    padding: 20,
-  },
-  loadingTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#f1f5f9",
-    textAlign: "center",
-    marginBottom: 8,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: "#94a3b8",
-    textAlign: "center",
-  },
-  errorContainer: {
-    backgroundColor: "#1e293b",
-    borderRadius: 12,
-    padding: 25,
-    alignItems: "center",
-    width: "100%",
-    maxWidth: 400,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  errorIcon: {
-    color: "#f87171",
-    marginBottom: 15,
-  },
-  emptyIcon: {
-    color: "#60a5fa",
-    marginBottom: 15,
-  },
-  errorTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#f1f5f9",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  errorText: {
-    fontSize: 16,
-    color: "#94a3b8",
-    textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 20,
-  },
-  list: {
-    flex: 1,
-  },
-  listContentContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  listHeader: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#cbd5e1",
-    paddingVertical: 12,
-    paddingHorizontal: 5,
-    marginBottom: 8,
-  },
-  centeredMessageContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 50,
-  },
-  emptyListIcon: {
-    color: "#64748b",
-    marginBottom: 10,
-  },
-  emptyListText: {
-    fontSize: 16,
-    color: "#94a3b8",
-    textAlign: "center",
-  },
-  footerContainer: {
-    marginTop: 10,
-    paddingBottom: 10,
-  },
-  actionButtonsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    borderTopWidth: 1,
-    borderTopColor: "#334155",
-    backgroundColor: "#1e293b",
-    paddingHorizontal: 15,
-  },
-  buttonBase: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  flexButton: {
-    flex: 1,
-    marginHorizontal: 5,
-  },
-  primaryButton: {
-    backgroundColor: "#3b82f6",
-  },
-  secondaryButton: {
-    backgroundColor: "#475569",
-  },
-  buttonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  secondaryButtonText: {
-    color: "#e2e8f0",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  buttonIcon: {
-    marginRight: 8,
-  },
-  secondaryButtonIcon: {
-    color: "#e2e8f0",
-    marginRight: 8,
-  },
-  disabledButton: {
-    opacity: 0.5,
-    backgroundColor: "#4b5563",
-  },
-  spacingBottom: { marginBottom: 10 },
-  spacingTop: { marginTop: 20 },
-  spacingTopSmall: { marginTop: 12 },
-});
 
 export default EditItemsScreen;
