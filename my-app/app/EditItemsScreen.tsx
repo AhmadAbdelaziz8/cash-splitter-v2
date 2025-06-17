@@ -51,7 +51,7 @@ const EditItemsScreen: React.FC = () => {
   const [initialLoadAttempted, setInitialLoadAttempted] = useState(false);
   const [isProcessingLocally, setIsProcessingLocally] = useState(true);
 
-  const { bottom } = useSafeAreaInsets();
+  const { top, bottom } = useSafeAreaInsets();
 
   useEffect(() => {
     const processImageOnMount = async () => {
@@ -180,24 +180,31 @@ const EditItemsScreen: React.FC = () => {
 
   return (
     <View className="flex-1 bg-slate-50">
-      {/* Header */}
-      <View className="bg-white px-4 py-3 border-b border-slate-200">
-        <View className="flex-row items-center justify-between">
-          <TouchableOpacity
-            onPress={() => router.back()}
-            className="p-2 rounded-lg bg-slate-100"
-          >
-            <Ionicons name="arrow-back" size={24} color="#64748b" />
-          </TouchableOpacity>
-          <Text className="text-lg font-semibold text-slate-900">
-            Edit Receipt Items
-          </Text>
-          <TouchableOpacity
-            onPress={openItemModalToAdd}
-            className="p-2 rounded-lg bg-blue-100"
-          >
-            <Ionicons name="add" size={24} color="#3b82f6" />
-          </TouchableOpacity>
+      {/* Header with Safe Area */}
+      <View
+        className="bg-white border-b border-slate-200"
+        style={{ paddingTop: top }}
+      >
+        <View className="px-4 py-4">
+          <View className="flex-row items-center justify-between">
+            <TouchableOpacity
+              onPress={() => router.back()}
+              className="p-2 rounded-lg bg-slate-100"
+            >
+              <Ionicons name="arrow-back" size={24} color="#64748b" />
+            </TouchableOpacity>
+            <View className="flex-1 mx-4">
+              <Text className="text-xl font-bold text-slate-900 text-center">
+                Edit Receipt Items
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={openItemModalToAdd}
+              className="p-2 rounded-lg bg-blue-100"
+            >
+              <Ionicons name="add" size={24} color="#3b82f6" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 

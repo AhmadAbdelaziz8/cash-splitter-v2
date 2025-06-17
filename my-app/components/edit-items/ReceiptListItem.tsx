@@ -19,49 +19,70 @@ const ReceiptListItem: React.FC<ReceiptListItemProps> = ({
   onDelete,
 }) => {
   return (
-    <View className="flex-row justify-between items-center py-3 px-2 border-b border-slate-200 bg-white rounded-lg mb-2 shadow-sm">
-      <View className="flex-row items-center flex-1 mr-2">
-        <TouchableOpacity
-          onPress={() => onToggleSelection(item.id)}
-          className="p-2 mr-2"
-        >
-          <Ionicons
-            name={isSelected ? "checkmark-circle" : "ellipse-outline"}
-            size={26}
-            color={isSelected ? "#3b82f6" : "#64748b"}
-          />
-        </TouchableOpacity>
-        <View className="flex min-w-0">
-          <View className="bg-green-100 px-3 py-2 rounded-lg mb-2">
+    <View className="bg-white rounded-2xl mb-4 shadow-lg border border-slate-100 overflow-hidden">
+      {/* Main Content */}
+      <View className="p-5">
+        {/* Top Row: Checkbox + Item Name */}
+        <View className="flex-row items-center mb-4">
+          <TouchableOpacity
+            onPress={() => onToggleSelection(item.id)}
+            className="mr-4"
+          >
+            <Ionicons
+              name={isSelected ? "checkmark-circle" : "ellipse-outline"}
+              size={32}
+              color={isSelected ? "#3b82f6" : "#64748b"}
+            />
+          </TouchableOpacity>
+
+          {/* Item Name - Takes full horizontal space */}
+          <View className="flex-1 bg-green-100 px-4 py-3 rounded-xl">
             <Text
-              className="text-lg font-semibold text-green-800"
-              numberOfLines={1}
+              className="text-lg font-bold text-green-800"
+              numberOfLines={2}
               ellipsizeMode="tail"
             >
               {item.name}
             </Text>
           </View>
-          <Text className="text-sm text-slate-600">Qty: {item.quantity}</Text>
         </View>
-      </View>
 
-      <View className="flex-row items-center">
-        <Text className="text-base font-bold text-slate-900 mr-3">
-          ${item.price.toFixed(2)}
-        </Text>
-        {/* edit */}
-        <TouchableOpacity
-          onPress={() => onEdit(item)}
-          className="p-2 ml-1 bg-yellow-100  rounded-full"
-        >
-          <Ionicons name="pencil-outline" size={22} color="#facc15" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => onDelete(item.id)}
-          className="p-2 ml-1 bg-red-100 rounded-full"
-        >
-          <Ionicons name="trash-outline" size={22} color="#f87171" />
-        </TouchableOpacity>
+        {/* Bottom Row: Quantity + Price & Actions */}
+        <View className="flex-row items-end justify-between">
+          {/* Quantity */}
+          <View className="flex-1">
+            <Text className="text-sm text-slate-500 mb-1">Quantity</Text>
+            <Text className="text-base font-semibold text-slate-900">
+              {item.quantity}
+            </Text>
+          </View>
+
+          {/* Right Section: Price + Action Buttons */}
+          <View className="items-center">
+            {/* Price with colored background */}
+            <View className="bg-blue-500 px-4 py-2 rounded-xl mb-3 shadow-md">
+              <Text className="text-white font-bold text-lg">
+                ${item.price.toFixed(2)}
+              </Text>
+            </View>
+
+            {/* Action Buttons */}
+            <View className="flex-row items-center gap-2">
+              <TouchableOpacity
+                onPress={() => onEdit(item)}
+                className="p-3 bg-amber-100 rounded-xl shadow-sm"
+              >
+                <Ionicons name="pencil" size={18} color="#f59e0b" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => onDelete(item.id)}
+                className="p-3 bg-red-100 rounded-xl shadow-sm"
+              >
+                <Ionicons name="trash" size={18} color="#ef4444" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </View>
     </View>
   );

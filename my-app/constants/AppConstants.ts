@@ -73,7 +73,7 @@ export const API = {
 } as const;
 
 export const WEB_SHARING = {
-  BASE_URL: "https://cash-splitter-static.vercel.app/",
+  BASE_URL: "https://cash-splitter-v2.netlify.app/",
   MAX_URL_LENGTH: 2048,
   FALLBACK_SHARE_MESSAGE: "Check out this bill split calculation!",
 } as const;
