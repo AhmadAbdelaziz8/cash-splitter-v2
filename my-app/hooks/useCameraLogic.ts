@@ -1,7 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Alert, Linking, Platform, StyleSheet } from "react-native";
 import * as FileSystem from "expo-file-system";
-import { CameraView, useCameraPermissions, CameraType, CameraMountError } from "expo-camera";
+import {
+  CameraView,
+  useCameraPermissions,
+  CameraType,
+  CameraMountError,
+} from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { useReceipt } from "@/contexts/ReceiptContext";
@@ -94,7 +99,6 @@ export function useCameraLogic(): UseCameraLogicResult {
   };
 
   const handleCameraReady = () => {
-    console.log("CAMERA_DEBUG: Camera is ready event fired!");
     setIsCameraReady(true);
   };
 
