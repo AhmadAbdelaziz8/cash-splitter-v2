@@ -264,11 +264,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <View className="mt-16 pt-8 border-t border-slate-200 dark:border-slate-700 items-center">
-          <Text className="text-sm text-slate-500 dark:text-slate-400">
-            Cash Splitter v1.0 - Effortless Bill Management
-          </Text>
-        </View>
+     
       </View>
 
       <Modal

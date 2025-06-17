@@ -1,5 +1,4 @@
 import "../global.css";
-
 import {
   DarkTheme,
   DefaultTheme,
@@ -10,6 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import { ReceiptProvider } from "@/contexts/ReceiptContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -18,22 +18,30 @@ export default function RootLayout() {
 
   return (
     <ReceiptProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="camera" options={{ headerShown: false }} />
-          <Stack.Screen name="preview" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="EditItemsScreen"
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="ShareLinkScreen"
-            options={{ headerShown: false }}
-          />
-        </Stack>
-        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-      </ThemeProvider>
+      <SafeAreaProvider>
+        <ThemeProvider
+          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+        >
+          {/* FIX: Add flex:1 to SafeAreaView */}
+          <SafeAreaView style={{ flex: 1 }}>
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="camera" options={{ headerShown: false }} />
+              <Stack.Screen name="preview" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="EditItemsScreen"
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="ShareLinkScreen"
+                options={{ headerShown: false }}
+              />
+            </Stack>
+            {/* FIX: Move StatusBar inside SafeAreaView */}
+            <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+          </SafeAreaView>
+        </ThemeProvider>
+      </SafeAreaProvider>
     </ReceiptProvider>
   );
 }

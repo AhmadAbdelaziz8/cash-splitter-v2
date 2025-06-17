@@ -20,34 +20,10 @@ export default function TabLayout() {
         tabBarActiveTintColor: activeIconColor,
         tabBarInactiveTintColor: iconColor,
         tabBarStyle: {
-          backgroundColor: tabBarBackgroundColor,
-          paddingBottom: bottom > 0 ? bottom -5 : 5, // Adjust padding based on safe area
-          paddingTop: 10,
-          height: bottom > 0 ? 60 + bottom -5: 70, // Adjust height
-          borderTopWidth: 1,
-          borderTopColor: borderTopColor,
-          shadowColor: colorScheme === "dark" ? "#000" : "#000",
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: colorScheme === "dark" ? 0.25 : 0.1,
-          shadowRadius: 3.84,
-          elevation: 5,
+          display: "none", // Hide the bottom bar
         },
         tabBarShowLabel: false, // Hiding labels for a cleaner look
       }}
-    >
-      <Tabs.Screen
-        name="index" 
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "home" : "home-outline"}
-              size={size}
-              color={focused ? activeIconColor : iconColor}
-            />
-          ),
-        }}
-      />
-    </Tabs>
+    ></Tabs>
   );
 }
