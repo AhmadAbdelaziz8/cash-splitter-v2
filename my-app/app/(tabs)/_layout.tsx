@@ -22,17 +22,9 @@ export default function TabLayout() {
         tabBarInactiveTintColor: iconColor,
         headerShown: false,
         tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            position: "absolute",
-            backgroundColor: tabBarBackgroundColor,
-            borderTopColor: borderTopColor,
-          },
-          default: {
-            backgroundColor: tabBarBackgroundColor,
-            borderTopColor: borderTopColor,
-          },
-        }),
+        tabBarStyle: {
+          display: "none", // Hide the entire tab bar
+        },
       }}
     >
       <Tabs.Screen

@@ -12,7 +12,7 @@ export default function HomeHeader({
   onSettingsPress,
 }: HomeHeaderProps) {
   return (
-    <View className="flex-row justify-between items-center mb-10">
+    <View className="flex-row justify-between items-center mb-5">
       <Text className="text-4xl font-bold text-slate-800">Cash Splitter</Text>
       {storedApiKey && (
         <TouchableOpacity

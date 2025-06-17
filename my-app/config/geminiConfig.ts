@@ -14,10 +14,21 @@ export interface ParsedReceiptData {
   service?: number | string; // Can be a fixed number or a percentage string e.g., "10%"
 }
 
+// Enhanced error types for better user experience
+export enum ReceiptParsingError {
+  NO_ITEMS_FOUND = "NO_ITEMS_FOUND",
+  UNREADABLE_IMAGE = "UNREADABLE_IMAGE",
+  INVALID_RECEIPT = "INVALID_RECEIPT",
+  API_ERROR = "API_ERROR",
+  NETWORK_ERROR = "NETWORK_ERROR",
+  VALIDATION_ERROR = "VALIDATION_ERROR",
+}
+
 export interface ParseResult {
   success: boolean;
   data?: ParsedReceiptData;
   error?: string;
+  errorType?: ReceiptParsingError;
 }
 
 export async function parseReceiptImage(

@@ -18,3 +18,4 @@ export default function ImagePreview({ imageUri }: ImagePreviewProps) {
     </View>
   );
 }
+ 

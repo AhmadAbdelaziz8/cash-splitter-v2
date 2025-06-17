@@ -31,7 +31,7 @@ const ReceiptListItem: React.FC<ReceiptListItemProps> = ({
             color={isSelected ? "#3b82f6" : "#64748b"}
           />
         </TouchableOpacity>
-        <View className="flex-1 min-w-0">
+        <View className="flex min-w-0">
           <View className="bg-green-100 px-3 py-2 rounded-lg mb-2">
             <Text
               className="text-lg font-semibold text-green-800"
@@ -49,12 +49,16 @@ const ReceiptListItem: React.FC<ReceiptListItemProps> = ({
         <Text className="text-base font-bold text-slate-900 mr-3">
           ${item.price.toFixed(2)}
         </Text>
-        <TouchableOpacity onPress={() => onEdit(item)} className="p-2 ml-1">
+        {/* edit */}
+        <TouchableOpacity
+          onPress={() => onEdit(item)}
+          className="p-2 ml-1 bg-yellow-100  rounded-full"
+        >
           <Ionicons name="pencil-outline" size={22} color="#facc15" />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => onDelete(item.id)}
-          className="p-2 ml-1"
+          className="p-2 ml-1 bg-red-100 rounded-full"
         >
           <Ionicons name="trash-outline" size={22} color="#f87171" />
         </TouchableOpacity>

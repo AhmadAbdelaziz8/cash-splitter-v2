@@ -9,6 +9,7 @@ import { WEB_SHARING } from "@/constants/AppConstants"; // Import WEB_SHARING
 import {
   ParsedReceiptData as GeminiParsedReceiptData,
   ReceiptItem as GeminiReceiptItem,
+  ReceiptParsingError,
 } from "@/config/geminiConfig"; // For type clarity
 import { receiptService as apiReceiptService } from "@/services/receiptService"; // Aliased import
 import { ReceiptItem, LLMReceiptItem } from "@/types";
@@ -30,6 +31,7 @@ interface ReceiptContextType {
   shareableLink: string | null;
   isProcessing: boolean; // New state
   processingError: string | null; // New state
+  processingErrorType: ReceiptParsingError | null; // New state for error type
   setImageUri: (uri: string | null) => void;
   setImageBase64: (base64: string | null) => void;
   // setItems: (items: ReceiptItem[]) => void; // Replaced by setProcessedReceiptData for initial load
@@ -44,7 +46,7 @@ interface ReceiptContextType {
   updateServiceChargeValue: (newService: number | string | null) => void; // Renamed from updateReceiptService
   generateShareableLink: () => void;
   processReceiptImage: (imageBase64: string) => Promise<void>; // New async function
-  setProcessingError: (error: string | null) => void; // Add this function
+  setProcessingError: (error: string | null, errorType?: ReceiptParsingError | null) => void; // Updated function
   resetState: () => void;
 }
 
@@ -69,6 +71,7 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
   const [shareableLink, setShareableLink] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingError, setProcessingError] = useState<string | null>(null);
+  const [processingErrorType, setProcessingErrorType] = useState<ReceiptParsingError | null>(null);
 
   const setProcessedReceiptData = (data: GeminiParsedReceiptData) => {
     const processedItems: ReceiptItem[] = data.items.map((item, index) => ({
@@ -90,6 +93,7 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
   const processReceiptImage = async (imgBase64: string) => {
     setIsProcessing(true);
     setProcessingError(null);
+    setProcessingErrorType(null);
 
     try {
       const result = await apiReceiptService.parseReceiptImage(imgBase64);
@@ -98,7 +102,9 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         setProcessedReceiptData(result.data);
       } else {
         const errorMessage = result.error || "Failed to process receipt image.";
+        const errorType = result.errorType || null;
         setProcessingError(errorMessage);
+        setProcessingErrorType(errorType);
         throw new Error(errorMessage);
       }
     } catch (error) {
@@ -106,6 +112,10 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         error instanceof Error
           ? error.message
           : "An unexpected error occurred while processing the receipt.";
+      // If we don't already have an error type from the service, set a generic one
+      if (!processingErrorType) {
+        setProcessingErrorType(ReceiptParsingError.UNREADABLE_IMAGE);
+      }
       setProcessingError(errorMessage);
       throw error; // Re-throw so calling code can handle it
     } finally {
@@ -206,7 +216,7 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
 
     try {
       const encodedData = encodeURIComponent(JSON.stringify(shareData));
-      const shareUrl = `${WEB_SHARING.BASE_URL}?data=${encodedData}`;
+      const shareUrl = `${WEB_SHARING.BASE_URL}#data=${encodedData}`;
       setShareableLink(shareUrl);
     } catch (error) {
       if (__DEV__) {
@@ -227,6 +237,12 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     setShareableLink(null);
     setIsProcessing(false);
     setProcessingError(null);
+    setProcessingErrorType(null);
+  };
+
+  const handleSetProcessingError = (error: string | null, errorType?: ReceiptParsingError | null) => {
+    setProcessingError(error);
+    setProcessingErrorType(errorType || null);
   };
 
   return (
@@ -244,6 +260,7 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         shareableLink,
         isProcessing,
         processingError,
+        processingErrorType,
         setImageUri,
         setImageBase64,
         setProcessedReceiptData,
@@ -255,7 +272,7 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         updateServiceChargeValue,
         generateShareableLink,
         processReceiptImage,
-        setProcessingError,
+        setProcessingError: handleSetProcessingError,
         resetState,
       }}
     >

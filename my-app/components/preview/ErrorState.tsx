@@ -39,3 +39,4 @@ export default function ErrorState({ onRetake }: ErrorStateProps) {
     </View>
   );
 }
+ 

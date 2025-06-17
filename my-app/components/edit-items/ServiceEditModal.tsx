@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Modal,
   Alert,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -80,80 +79,70 @@ const ServiceEditModal: React.FC<ServiceEditModalProps> = ({
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.overlay}
+        className="flex-1 justify-center items-center bg-black/70"
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.headerContainer}>
-            <Text style={styles.modalTitle}>Edit Service Charge</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons
-                name="close-circle-outline"
-                size={30}
-                style={styles.closeIcon}
-              />
+        <View className="w-[90%] max-w-[400px] bg-white rounded-xl p-5 shadow-lg">
+          <View className="flex-row justify-between items-center mb-5">
+            <Text className="text-xl font-bold text-slate-900">
+              Edit Service Charge
+            </Text>
+            <TouchableOpacity onPress={onClose} className="p-1">
+              <Ionicons name="close-circle-outline" size={30} color="#94a3b8" />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.typeSelectorContainer}>
+          <View className="flex-row justify-around mb-5 bg-slate-100 rounded-lg p-1">
             <TouchableOpacity
-              style={[
-                styles.typeButton,
-                serviceType === "fixed" && styles.typeButtonActive,
-              ]}
+              className={`flex-1 flex-row items-center justify-center py-2 px-1 rounded-md mx-1 ${
+                serviceType === "fixed" ? "bg-indigo-600" : ""
+              }`}
               onPress={() => setServiceType("fixed")}
             >
               <Ionicons
                 name="cash-outline"
                 size={20}
-                style={[
-                  styles.typeIcon,
-                  serviceType === "fixed" && styles.typeIconActive,
-                ]}
+                color={serviceType === "fixed" ? "#ffffff" : "#64748b"}
+                className="mr-2"
               />
               <Text
-                style={[
-                  styles.typeButtonText,
-                  serviceType === "fixed" && styles.typeButtonTextActive,
-                ]}
+                className={`text-sm font-medium ${
+                  serviceType === "fixed" ? "text-white" : "text-slate-600"
+                }`}
               >
                 Fixed Amount
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                styles.typeButton,
-                serviceType === "percentage" && styles.typeButtonActive,
-              ]}
+              className={`flex-1 flex-row items-center justify-center py-2 px-1 rounded-md mx-1 ${
+                serviceType === "percentage" ? "bg-indigo-600" : ""
+              }`}
               onPress={() => setServiceType("percentage")}
             >
               <Ionicons
                 name="trending-up-outline"
                 size={20}
-                style={[
-                  styles.typeIcon,
-                  serviceType === "percentage" && styles.typeIconActive,
-                ]}
+                color={serviceType === "percentage" ? "#ffffff" : "#64748b"}
+                className="mr-2"
               />
               <Text
-                style={[
-                  styles.typeButtonText,
-                  serviceType === "percentage" && styles.typeButtonTextActive,
-                ]}
+                className={`text-sm font-medium ${
+                  serviceType === "percentage" ? "text-white" : "text-slate-600"
+                }`}
               >
                 Percentage (%)
               </Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>
+          <View className="mb-5">
+            <Text className="text-sm text-slate-600 mb-2 font-medium">
               {serviceType === "fixed"
                 ? "Service Amount ($)"
                 : "Service Percentage (%)"}
             </Text>
-            <View style={styles.inputWithSymbolContainer}>
+            <View className="flex-row items-center bg-slate-100 rounded-lg border border-slate-300">
               <TextInput
-                style={styles.input}
+                className="flex-1 text-slate-900 px-4 py-3 text-base text-right"
                 placeholder={
                   serviceType === "fixed" ? "e.g., 10.00" : "e.g., 15"
                 }
@@ -164,36 +153,42 @@ const ServiceEditModal: React.FC<ServiceEditModalProps> = ({
                 autoFocus={true}
               />
               {serviceType === "percentage" && (
-                <Text style={styles.percentageSymbol}>%</Text>
+                <Text className="text-lg text-slate-500 font-bold px-4">%</Text>
               )}
             </View>
-            <Text style={styles.infoText}>
+            <Text className="text-xs text-slate-500 mt-2 text-center">
               Enter the service charge. Leave empty or enter 0 to remove.
             </Text>
           </View>
 
-          <View style={styles.actionsContainer}>
+          <View className="flex-row justify-between mt-3">
             <TouchableOpacity
-              style={[styles.buttonBase, styles.secondaryButton]}
+              className="flex-1 flex-row items-center justify-center py-3 rounded-lg mx-1 bg-slate-200"
               onPress={onClose}
             >
               <Ionicons
                 name="close-outline"
                 size={20}
-                style={styles.buttonIconSecondary}
+                color="#475569"
+                className="mr-2"
               />
-              <Text style={styles.buttonTextSecondary}>Cancel</Text>
+              <Text className="text-slate-700 text-base font-semibold">
+                Cancel
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.buttonBase, styles.primaryButton]}
+              className="flex-1 flex-row items-center justify-center py-3 rounded-lg mx-1 bg-blue-600"
               onPress={handleSave}
             >
               <Ionicons
                 name="checkmark-done-outline"
                 size={20}
-                style={styles.buttonIconPrimary}
+                color="white"
+                className="mr-2"
               />
-              <Text style={styles.buttonTextPrimary}>Save Service</Text>
+              <Text className="text-white text-base font-semibold">
+                Save Service
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -201,155 +196,5 @@ const ServiceEditModal: React.FC<ServiceEditModalProps> = ({
     </Modal>
   );
 };
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.7)",
-  },
-  modalContainer: {
-    width: "90%",
-    maxWidth: 400,
-    backgroundColor: "#1e293b",
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  headerContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#e2e8f0",
-  },
-  closeButton: {
-    padding: 5,
-  },
-  closeIcon: {
-    color: "#94a3b8",
-  },
-  typeSelectorContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginBottom: 20,
-    backgroundColor: "#334155",
-    borderRadius: 8,
-    padding: 4,
-  },
-  typeButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-    borderRadius: 6,
-    marginHorizontal: 2,
-  },
-  typeButtonActive: {
-    backgroundColor: "#4f46e5",
-  },
-  typeIcon: {
-    color: "#cbd5e1",
-    marginRight: 6,
-  },
-  typeIconActive: {
-    color: "#ffffff",
-  },
-  typeButtonText: {
-    fontSize: 14,
-    color: "#cbd5e1",
-    fontWeight: "500",
-  },
-  typeButtonTextActive: {
-    color: "#ffffff",
-    fontWeight: "bold",
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    color: "#cbd5e1",
-    marginBottom: 8,
-    fontWeight: "500",
-  },
-  inputWithSymbolContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#334155",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#475569",
-  },
-  input: {
-    flex: 1,
-    color: "#f1f5f9",
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    fontSize: 16,
-    textAlign: "right",
-  },
-  percentageSymbol: {
-    fontSize: 18,
-    color: "#94a3b8",
-    fontWeight: "bold",
-    paddingHorizontal: 15,
-  },
-  infoText: {
-    fontSize: 13,
-    color: "#94a3b8",
-    marginTop: 8,
-    textAlign: "center",
-  },
-  actionsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-  },
-  buttonBase: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    borderRadius: 8,
-    flex: 1,
-    marginHorizontal: 5,
-  },
-  primaryButton: {
-    backgroundColor: "#3b82f6",
-  },
-  secondaryButton: {
-    backgroundColor: "#475569",
-  },
-  buttonTextPrimary: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  buttonTextSecondary: {
-    color: "#e2e8f0",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  buttonIconPrimary: {
-    color: "#ffffff",
-    marginRight: 8,
-  },
-  buttonIconSecondary: {
-    color: "#e2e8f0",
-    marginRight: 8,
-  },
-});
 
 export default ServiceEditModal;

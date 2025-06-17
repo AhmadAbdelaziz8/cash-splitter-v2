@@ -71,7 +71,6 @@ export default function PreviewScreen() {
         onProceed={handleProceed}
         isProcessing={isProcessing}
         hasImage={!!imageUri}
-        bottomInset={insets.bottom}
       />
     </View>
   );

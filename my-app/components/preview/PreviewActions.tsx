@@ -7,7 +7,6 @@ interface PreviewActionsProps {
   onProceed: () => void;
   isProcessing: boolean;
   hasImage: boolean;
-  bottomInset: number;
 }
 
 export default function PreviewActions({
@@ -15,13 +14,9 @@ export default function PreviewActions({
   onProceed,
   isProcessing,
   hasImage,
-  bottomInset,
 }: PreviewActionsProps) {
   return (
-    <View
-      style={{ paddingBottom: bottomInset > 0 ? bottomInset : 20 }}
-      className="flex-row justify-around px-5 pt-4 border-t border-slate-200 bg-white"
-    >
+    <View className="flex-row justify-around px-5 pt-4 border-t border-slate-200 bg-white">
       <TouchableOpacity
         className={`flex-1 flex-row items-center justify-center py-4 px-5 rounded-xl mx-1 bg-slate-200 ${
           isProcessing ? "opacity-60" : ""

@@ -38,6 +38,7 @@ const EditItemsScreen: React.FC = () => {
     imageBase64,
     isProcessing: contextIsProcessing,
     processingError,
+    processingErrorType,
     processReceiptImage,
     setProcessingError,
   } = useReceipt();
@@ -168,6 +169,7 @@ const EditItemsScreen: React.FC = () => {
     return (
       <ProcessingErrorView
         error={processingError}
+        errorType={processingErrorType || undefined}
         onRetry={handleRetryProcess}
         onAddManually={handleAddManually}
         onGoToSettings={handleGoBackToHome}
@@ -242,7 +244,7 @@ const EditItemsScreen: React.FC = () => {
       </View>
 
       {/* Footer */}
-      <View style={{ paddingBottom: bottom }}>
+      <View>
         <ReceiptTotalsFooter
           itemsSubtotal={currentItemsSubtotal}
           tax={receiptTax}
