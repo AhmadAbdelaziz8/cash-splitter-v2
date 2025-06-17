@@ -174,21 +174,34 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
   const receiptTotal = userSubtotal + (receiptTax ?? 0) + serviceChargeAmount;
 
   const generateShareableLink = () => {
-    const selectedItems = items.filter((item) =>
-      userSelectedItemIds.includes(item.id)
-    );
-
-    if (selectedItems.length === 0) {
+    // Include ALL items in the shareable link, not just selected ones
+    if (items.length === 0) {
       setShareableLink(null);
       return;
     }
 
+    // Calculate the total based on ALL items (not just selected ones)
+    const totalSubtotal = items.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0
+    );
+    const serviceChargeAmount = (() => {
+      if (serviceChargeValue === null) return 0;
+      if (typeof serviceChargeValue === "string") {
+        const percentage = parseFloat(serviceChargeValue.replace("%", ""));
+        return isNaN(percentage) ? 0 : (totalSubtotal * percentage) / 100;
+      }
+      return serviceChargeValue;
+    })();
+    const totalWithTaxAndService =
+      totalSubtotal + (receiptTax ?? 0) + serviceChargeAmount;
+
     const shareData = {
-      items: selectedItems,
-      subtotal: userSubtotal,
+      items: items, // Send ALL items
+      subtotal: totalSubtotal, // Total of all items
       tax: receiptTax,
       service: serviceChargeValue,
-      total: receiptTotal,
+      total: totalWithTaxAndService, // Grand total including all items
     };
 
     try {
@@ -196,7 +209,9 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
       const shareUrl = `${WEB_SHARING.BASE_URL}?data=${encodedData}`;
       setShareableLink(shareUrl);
     } catch (error) {
-      console.error("Error generating shareable link:", error);
+      if (__DEV__) {
+        console.error("Error generating shareable link:", error);
+      }
       setShareableLink(null);
     }
   };

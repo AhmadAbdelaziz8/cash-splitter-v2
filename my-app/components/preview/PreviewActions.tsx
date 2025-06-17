@@ -20,10 +20,10 @@ export default function PreviewActions({
   return (
     <View
       style={{ paddingBottom: bottomInset > 0 ? bottomInset : 20 }}
-      className="flex-row justify-around px-5 pt-4 border-t border-slate-700 bg-slate-800"
+      className="flex-row justify-around px-5 pt-4 border-t border-slate-200 bg-white"
     >
       <TouchableOpacity
-        className={`flex-1 flex-row items-center justify-center py-4 px-5 rounded-xl mx-1 bg-slate-600 ${
+        className={`flex-1 flex-row items-center justify-center py-4 px-5 rounded-xl mx-1 bg-slate-200 ${
           isProcessing ? "opacity-60" : ""
         }`}
         onPress={onRetake}
@@ -32,10 +32,10 @@ export default function PreviewActions({
         <Ionicons
           name="camera-reverse-outline"
           size={20}
-          color="#e2e8f0"
+          color="#475569"
           className="mr-2"
         />
-        <Text className="text-slate-200 text-base font-semibold">
+        <Text className="text-slate-700 text-base font-semibold">
           Retake Photo
         </Text>
       </TouchableOpacity>

@@ -55,8 +55,8 @@ const ReceiptTotalsFooter: React.FC<ReceiptTotalsFooterProps> = ({
         <Text
           className={
             isEmphasized
-              ? "text-lg font-bold text-slate-100"
-              : "text-base text-slate-300"
+              ? "text-lg font-bold text-slate-900"
+              : "text-base text-slate-600"
           }
         >
           {label}
@@ -64,17 +64,17 @@ const ReceiptTotalsFooter: React.FC<ReceiptTotalsFooterProps> = ({
         {onEdit && (
           <TouchableOpacity
             onPress={onEdit}
-            className="ml-3 p-1 bg-slate-700 rounded"
+            className="ml-3 p-1 bg-slate-100 rounded"
           >
-            <Ionicons name="pencil-outline" size={18} color="#94a3b8" />
+            <Ionicons name="pencil-outline" size={18} color="#64748b" />
           </TouchableOpacity>
         )}
       </View>
       <Text
         className={
           isEmphasized
-            ? "text-lg font-bold text-slate-100"
-            : "text-base font-medium text-slate-200"
+            ? "text-lg font-bold text-slate-900"
+            : "text-base font-medium text-slate-700"
         }
       >
         {value}
@@ -83,7 +83,7 @@ const ReceiptTotalsFooter: React.FC<ReceiptTotalsFooterProps> = ({
   );
 
   return (
-    <View className="mt-5 pt-4 border-t border-slate-700 bg-slate-800 px-4 pb-3 rounded-lg shadow-sm">
+    <View className="mt-5 pt-4 border-t border-slate-200 bg-white px-4 pb-3 rounded-lg shadow-sm">
       {renderTotalRow("Items Subtotal:", `$${itemsSubtotal.toFixed(2)}`)}
       {renderTotalRow("Tax:", `$${(tax ?? 0).toFixed(2)}`, false, onEditTax)}
       {renderTotalRow(
@@ -94,17 +94,17 @@ const ReceiptTotalsFooter: React.FC<ReceiptTotalsFooterProps> = ({
       )}
 
       {originalReceiptTotal !== null && grandTotal !== originalReceiptTotal && (
-        <View className="flex-row justify-between items-center mt-2 mb-3 py-2 px-3 bg-slate-700 rounded">
-          <Text className="text-sm text-slate-400">
+        <View className="flex-row justify-between items-center mt-2 mb-3 py-2 px-3 bg-slate-100 rounded">
+          <Text className="text-sm text-slate-600">
             Original Receipt Total:
           </Text>
-          <Text className="text-sm font-medium text-slate-300">
+          <Text className="text-sm font-medium text-slate-700">
             ${originalReceiptTotal.toFixed(2)}
           </Text>
         </View>
       )}
 
-      <View className="h-px bg-slate-600 my-3" />
+      <View className="h-px bg-slate-300 my-3" />
       {renderTotalRow("Final Grand Total:", `$${grandTotal.toFixed(2)}`, true)}
     </View>
   );

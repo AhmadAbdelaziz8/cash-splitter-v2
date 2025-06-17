@@ -19,9 +19,7 @@ export default function RootLayout() {
   return (
     <ReceiptProvider>
       <SafeAreaProvider>
-        <ThemeProvider
-          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-        >
+        <ThemeProvider value={DefaultTheme}>
           {/* FIX: Add flex:1 to SafeAreaView */}
           <SafeAreaView style={{ flex: 1 }}>
             <Stack>
@@ -38,7 +36,7 @@ export default function RootLayout() {
               />
             </Stack>
             {/* FIX: Move StatusBar inside SafeAreaView */}
-            <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+            <StatusBar style="dark" />
           </SafeAreaView>
         </ThemeProvider>
       </SafeAreaProvider>

@@ -39,7 +39,9 @@ export default function PreviewScreen() {
       setImageBase64(base64Image);
       router.push("/EditItemsScreen");
     } catch (error) {
-      console.error("Error processing image for preview:", error);
+      if (__DEV__) {
+        console.error("Error processing image for preview:", error);
+      }
       Alert.alert(
         "Processing Error",
         `Failed to prepare image: ${
@@ -55,10 +57,7 @@ export default function PreviewScreen() {
   }
 
   return (
-    <View
-      style={{ paddingBottom: insets.bottom }}
-      className="flex-1 bg-slate-900"
-    >
+    <View style={{ paddingBottom: insets.bottom }} className="flex-1 bg-white">
       <PreviewHeader
         onBackPress={handleRetake}
         disabled={isProcessing}

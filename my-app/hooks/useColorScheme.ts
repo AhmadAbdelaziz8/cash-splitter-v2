@@ -1,1 +1,2 @@
-export { useColorScheme } from 'react-native';
+// Force light theme only - no dark mode support
+export const useColorScheme = () => "light" as const;

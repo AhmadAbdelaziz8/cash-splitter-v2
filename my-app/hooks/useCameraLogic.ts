@@ -12,7 +12,7 @@ import { router } from "expo-router";
 import { useReceipt } from "@/contexts/ReceiptContext";
 
 interface UseCameraLogicResult {
-  cameraRef: React.RefObject<CameraView>;
+  cameraRef: React.RefObject<CameraView | null>;
   facing: CameraType;
   permission: ReturnType<typeof useCameraPermissions>[0];
   permissionStatus: string;
@@ -48,16 +48,20 @@ export function useCameraLogic(): UseCameraLogicResult {
               from: originalUri,
               to: newPersistentUri,
             });
-            console.log(
-              "CAMERA_DEBUG: Image copied to persistent URI:",
-              newPersistentUri
-            );
+            if (__DEV__) {
+              console.log(
+                "CAMERA_DEBUG: Image copied to persistent URI:",
+                newPersistentUri
+              );
+            }
             return newPersistentUri;
           } catch (e) {
-            console.error(
-              "CAMERA_DEBUG: Failed to copy image to persistent dir:",
-              e
-            );
+            if (__DEV__) {
+              console.error(
+                "CAMERA_DEBUG: Failed to copy image to persistent dir:",
+                e
+              );
+            }
             throw e;
           }
         };
@@ -133,10 +137,12 @@ export function useCameraLogic(): UseCameraLogicResult {
       if (photo?.uri) {
         try {
           const persistentUri = await storeImageTemporarily(photo.uri);
-          console.log(
-            "CAMERA_DEBUG: Navigating to preview with URI:",
-            persistentUri
-          );
+          if (__DEV__) {
+            console.log(
+              "CAMERA_DEBUG: Navigating to preview with URI:",
+              persistentUri
+            );
+          }
           router.push({
             pathname: "/preview",
             params: { imageUri: persistentUri },
@@ -154,7 +160,9 @@ export function useCameraLogic(): UseCameraLogicResult {
         );
       }
     } catch (error) {
-      console.error("Failed to take picture:", error);
+      if (__DEV__) {
+        console.error("Failed to take picture:", error);
+      }
 
       let errorMessage = "Unknown error occurred";
       if (error instanceof Error) {
@@ -200,8 +208,7 @@ export function useCameraLogic(): UseCameraLogicResult {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         quality: 0.8,
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsEditing: false,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
@@ -209,10 +216,12 @@ export function useCameraLogic(): UseCameraLogicResult {
           const persistentUri = await storeImageTemporarily(
             result.assets[0].uri
           );
-          console.log(
-            "CAMERA_DEBUG: Navigating to preview from gallery with URI:",
-            persistentUri
-          );
+          if (__DEV__) {
+            console.log(
+              "CAMERA_DEBUG: Navigating to preview from gallery with URI:",
+              persistentUri
+            );
+          }
           router.push({
             pathname: "/preview",
             params: { imageUri: persistentUri },

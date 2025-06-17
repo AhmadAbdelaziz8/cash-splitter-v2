@@ -140,7 +140,10 @@ If tax or service charges are not found, they can be omitted or set to null.`;
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
-    console.error("Error in parseReceiptImage:", error); // Log the full error
+    // Only log in development
+    if (__DEV__) {
+      console.error("Error in parseReceiptImage:", error);
+    }
     return {
       success: false,
       error: errorMessage,

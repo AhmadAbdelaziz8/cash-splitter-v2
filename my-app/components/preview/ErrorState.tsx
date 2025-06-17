@@ -8,17 +8,17 @@ interface ErrorStateProps {
 
 export default function ErrorState({ onRetake }: ErrorStateProps) {
   return (
-    <View className="flex-1 justify-center items-center px-5 bg-slate-900">
+    <View className="flex-1 justify-center items-center px-5 bg-white">
       <Ionicons
         name="alert-circle-outline"
         size={60}
         color="#ef4444"
         className="mb-5"
       />
-      <Text className="text-2xl font-bold text-slate-100 text-center mb-4">
+      <Text className="text-2xl font-bold text-slate-900 text-center mb-4">
         No Image Found
       </Text>
-      <Text className="text-base text-slate-400 text-center mb-8 leading-6">
+      <Text className="text-base text-slate-600 text-center mb-8 leading-6">
         It seems there was an issue receiving the image. Please try capturing it
         again.
       </Text>

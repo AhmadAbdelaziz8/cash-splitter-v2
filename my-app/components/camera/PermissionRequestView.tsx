@@ -7,7 +7,7 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { CameraPermissionStatus } from "expo-camera";
+import { PermissionStatus as CameraPermissionStatus } from "expo-camera";
 
 interface PermissionRequestViewProps {
   permissionStatus: CameraPermissionStatus | string;

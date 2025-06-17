@@ -7,7 +7,7 @@ import Animated, {
 } from "react-native-reanimated";
 
 import { ThemedView } from "@/components/ThemedView";
-import { useBottomTabOverflow } from "@/components/ui/TabBarBackground";
+import { useBottomTabOverflow } from "@/components/TabBarBackground";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
 // Defines the height of the parallax header.

@@ -18,6 +18,7 @@ import TaxEditModal from "@/components/edit-items/TaxEditModal";
 import ServiceEditModal from "@/components/edit-items/ServiceEditModal";
 import ReceiptListItem from "@/components/edit-items/ReceiptListItem";
 import ReceiptTotalsFooter from "@/components/edit-items/ReceiptTotalsFooter";
+import ProcessingErrorView from "@/components/edit-items/ProcessingErrorView";
 
 const EditItemsScreen: React.FC = () => {
   const {
@@ -132,6 +133,17 @@ const EditItemsScreen: React.FC = () => {
     router.replace("/(tabs)");
   };
 
+  const handleRetakePhoto = () => {
+    setProcessingError(null);
+    router.replace("/camera");
+  };
+
+  const handleAddManually = () => {
+    setProcessingError(null);
+    // Open the add item modal
+    openItemModalToAdd();
+  };
+
   const currentItemsSubtotal = useMemo(() => {
     return items.reduce((acc, item) => acc + item.price * item.quantity, 0);
   }, [items]);
@@ -140,12 +152,12 @@ const EditItemsScreen: React.FC = () => {
 
   if (isLoading && !processingError) {
     return (
-      <View className="flex-1 bg-white dark:bg-slate-900 items-center justify-center">
+      <View className="flex-1 bg-white items-center justify-center">
         <ActivityIndicator size="large" color="#3b82f6" className="mb-4" />
-        <Text className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
+        <Text className="text-xl font-semibold text-slate-900 mb-2">
           Processing Your Receipt...
         </Text>
-        <Text className="text-base text-slate-600 dark:text-slate-400 text-center px-6">
+        <Text className="text-base text-slate-600 text-center px-6">
           Extracting items, just a moment!
         </Text>
       </View>
@@ -153,60 +165,34 @@ const EditItemsScreen: React.FC = () => {
   }
 
   if (processingError) {
-    const isApiKeyError = processingError.includes("API Key not found");
     return (
-      <View className="flex-1 bg-white dark:bg-slate-900 items-center justify-center p-6">
-        <View className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-8 items-center max-w-sm w-full">
-          <Ionicons
-            name="alert-circle-outline"
-            size={48}
-            color={isApiKeyError ? "#dc2626" : "#ef4444"}
-            className="mb-4"
-          />
-          <Text className="text-xl font-bold text-red-800 dark:text-red-200 mb-2 text-center">
-            {isApiKeyError ? "API Key Required" : "Processing Error"}
-          </Text>
-          <Text className="text-red-700 dark:text-red-300 text-center mb-6 leading-6">
-            {isApiKeyError
-              ? "A valid Google Gemini API Key is needed to process receipts. Please set it up in the app settings."
-              : processingError}
-          </Text>
-          <TouchableOpacity
-            className="bg-blue-600 dark:bg-blue-700 px-6 py-3 rounded-xl flex-row items-center"
-            onPress={isApiKeyError ? handleGoBackToHome : handleRetryProcess}
-          >
-            <Ionicons
-              name={isApiKeyError ? "settings-outline" : "refresh-outline"}
-              size={20}
-              color="white"
-              className="mr-2"
-            />
-            <Text className="text-white font-semibold">
-              {isApiKeyError ? "Go to Settings" : "Retry Processing"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ProcessingErrorView
+        error={processingError}
+        onRetry={handleRetryProcess}
+        onAddManually={handleAddManually}
+        onGoToSettings={handleGoBackToHome}
+        onRetakePhoto={handleRetakePhoto}
+      />
     );
   }
 
   return (
-    <View className="flex-1 bg-slate-50 dark:bg-slate-900">
+    <View className="flex-1 bg-slate-50">
       {/* Header */}
-      <View className="bg-white dark:bg-slate-800 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+      <View className="bg-white px-4 py-3 border-b border-slate-200">
         <View className="flex-row items-center justify-between">
           <TouchableOpacity
             onPress={() => router.back()}
-            className="p-2 rounded-lg bg-slate-100 dark:bg-slate-700"
+            className="p-2 rounded-lg bg-slate-100"
           >
             <Ionicons name="arrow-back" size={24} color="#64748b" />
           </TouchableOpacity>
-          <Text className="text-lg font-semibold text-slate-900 dark:text-white">
+          <Text className="text-lg font-semibold text-slate-900">
             Edit Receipt Items
           </Text>
           <TouchableOpacity
             onPress={openItemModalToAdd}
-            className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900"
+            className="p-2 rounded-lg bg-blue-100"
           >
             <Ionicons name="add" size={24} color="#3b82f6" />
           </TouchableOpacity>
@@ -223,15 +209,15 @@ const EditItemsScreen: React.FC = () => {
               color="#94a3b8"
               className="mb-4"
             />
-            <Text className="text-xl font-semibold text-slate-600 dark:text-slate-400 mb-2">
+            <Text className="text-xl font-semibold text-slate-600 mb-2">
               No Items Found
             </Text>
-            <Text className="text-slate-500 dark:text-slate-500 text-center mb-6">
+            <Text className="text-slate-500 text-center mb-6">
               Add items manually or retry processing your receipt.
             </Text>
             <TouchableOpacity
               onPress={openItemModalToAdd}
-              className="bg-blue-600 dark:bg-blue-700 px-6 py-3 rounded-xl"
+              className="bg-blue-600 px-6 py-3 rounded-xl"
             >
               <Text className="text-white font-semibold">Add First Item</Text>
             </TouchableOpacity>
@@ -266,10 +252,10 @@ const EditItemsScreen: React.FC = () => {
           onEditTax={() => setTaxModalVisible(true)}
           onEditService={() => setServiceModalVisible(true)}
         />
-        <View className="px-4 py-3 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+        <View className="px-4 py-3 bg-white border-t border-slate-200">
           <TouchableOpacity
             onPress={handleFinalize}
-            className="bg-green-600 dark:bg-green-700 py-4 rounded-xl items-center"
+            className="bg-green-600 py-4 rounded-xl items-center"
             disabled={items.length === 0}
           >
             <Text className="text-white font-bold text-lg">

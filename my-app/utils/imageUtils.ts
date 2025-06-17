@@ -20,7 +20,7 @@ export const parseImage = async (imageUri: string): Promise<string> => {
       await FileSystem.makeDirectoryAsync(docDir, { intermediates: true });
 
       const newImageUri = docDir + Date.now() + "_" + imageUri.split("/").pop();
-      
+
       await FileSystem.copyAsync({
         from: imageUri,
         to: newImageUri,
@@ -33,7 +33,9 @@ export const parseImage = async (imageUri: string): Promise<string> => {
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("Error in parseImage:", error); // Added for more detailed logging
+    if (__DEV__) {
+      console.error("Error in parseImage:", error);
+    }
     throw new Error(`Failed to parse image: ${errorMessage}`);
   }
 };

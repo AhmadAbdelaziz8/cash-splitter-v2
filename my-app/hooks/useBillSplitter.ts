@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
-import { ReceiptItem, PersonSummary } from "@/types";
+import { ContextReceiptItem, PersonSummary } from "@/types";
 
 export interface BillSplitterState {
-  items: ReceiptItem[];
+  items: ContextReceiptItem[];
   people: string[];
   activePersonIndex: number;
   newPersonName: string;
@@ -10,7 +10,7 @@ export interface BillSplitterState {
 }
 
 export interface BillSplitterActions {
-  setItems: (items: ReceiptItem[]) => void;
+  setItems: (items: ContextReceiptItem[]) => void;
   addPerson: () => void;
   setNewPersonName: (name: string) => void;
   setActivePersonIndex: (index: number) => void;
@@ -20,7 +20,7 @@ export interface BillSplitterActions {
   calculateTotal: () => number;
 }
 
-export const useBillSplitter = (initialItems: ReceiptItem[]) => {
+export const useBillSplitter = (initialItems: ContextReceiptItem[]) => {
   const [state, setState] = useState<BillSplitterState>({
     items: initialItems,
     people: ["You"],
@@ -34,7 +34,7 @@ export const useBillSplitter = (initialItems: ReceiptItem[]) => {
     setState((prev) => ({ ...prev, items: initialItems }));
   }, [initialItems]);
 
-  const setItems = useCallback((items: ReceiptItem[]) => {
+  const setItems = useCallback((items: ContextReceiptItem[]) => {
     setState((prev) => ({ ...prev, items }));
   }, []);
 
@@ -71,7 +71,7 @@ export const useBillSplitter = (initialItems: ReceiptItem[]) => {
             return {
               ...item,
               assignedTo: isCurrentlyAssigned
-                ? item.assignedTo.filter((person) => person !== currentPerson)
+                ? item.assignedTo.filter((person: string) => person !== currentPerson)
                 : [...item.assignedTo, currentPerson],
             };
           }

@@ -44,7 +44,7 @@ export default function CameraScreen() {
   }
 
   return (
-    <View className="flex-1 bg-slate-100">
+    <View className="flex-1 bg-white">
       <CameraView
         ref={cameraRef}
         style={StyleSheet.absoluteFill}

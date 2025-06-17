@@ -19,7 +19,7 @@ const ReceiptListItem: React.FC<ReceiptListItemProps> = ({
   onDelete,
 }) => {
   return (
-    <View className="flex-row justify-between items-center py-3 px-2 border-b border-slate-700 bg-slate-800 rounded-lg mb-2 shadow-sm">
+    <View className="flex-row justify-between items-center py-3 px-2 border-b border-slate-200 bg-white rounded-lg mb-2 shadow-sm">
       <View className="flex-row items-center flex-1 mr-2">
         <TouchableOpacity
           onPress={() => onToggleSelection(item.id)}
@@ -32,19 +32,21 @@ const ReceiptListItem: React.FC<ReceiptListItemProps> = ({
           />
         </TouchableOpacity>
         <View className="flex-1 min-w-0">
-          <Text
-            className="text-lg font-semibold text-slate-200 mb-1"
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {item.name}
-          </Text>
-          <Text className="text-sm text-slate-400">Qty: {item.quantity}</Text>
+          <View className="bg-green-100 px-3 py-2 rounded-lg mb-2">
+            <Text
+              className="text-lg font-semibold text-green-800"
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {item.name}
+            </Text>
+          </View>
+          <Text className="text-sm text-slate-600">Qty: {item.quantity}</Text>
         </View>
       </View>
 
       <View className="flex-row items-center">
-        <Text className="text-base font-bold text-slate-100 mr-3">
+        <Text className="text-base font-bold text-slate-900 mr-3">
           ${item.price.toFixed(2)}
         </Text>
         <TouchableOpacity onPress={() => onEdit(item)} className="p-2 ml-1">

@@ -16,11 +16,11 @@ export default function PreviewHeader({
   return (
     <TouchableOpacity
       style={{ top: topInset + 10 }}
-      className="absolute left-4 z-10 bg-slate-800/70 p-3 rounded-full shadow-lg"
+      className="absolute left-4 z-10 bg-white/90 p-3 rounded-full shadow-lg border border-slate-200"
       onPress={onBackPress}
       disabled={disabled}
     >
-      <Ionicons name="arrow-back-outline" size={28} color="#e2e8f0" />
+      <Ionicons name="arrow-back-outline" size={28} color="#475569" />
     </TouchableOpacity>
   );
 }

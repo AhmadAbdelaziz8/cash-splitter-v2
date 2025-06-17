@@ -10,7 +10,7 @@ export default function ImagePreview({ imageUri }: ImagePreviewProps) {
     <View className="flex-1 justify-center items-center p-4">
       <Image
         source={{ uri: imageUri }}
-        className="w-full h-full rounded-xl border-2 border-slate-700"
+        className="w-full h-full rounded-xl border-2 border-slate-200"
         resizeMode="contain"
         accessible={true}
         accessibilityLabel="Preview of captured receipt"

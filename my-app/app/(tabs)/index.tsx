@@ -132,9 +132,9 @@ export default function HomeScreen() {
 
   if (isLoadingKey) {
     return (
-      <View className="flex-1 items-center justify-center bg-white dark:bg-slate-900 p-6">
+      <View className="flex-1 items-center justify-center bg-white p-6">
         <ActivityIndicator size="large" color="#0ea5e9" />
-        <Text className="text-slate-600 dark:text-slate-400 mt-6 text-lg">
+        <Text className="text-slate-600 mt-6 text-lg">
           Loading Secure Storage...
         </Text>
       </View>
@@ -142,7 +142,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-slate-50 dark:bg-slate-900">
+    <ScrollView className="flex-1 bg-slate-50">
       <View className="w-full max-w-4xl mx-auto px-6 sm:px-8 lg:px-10 py-10">
         <HomeHeader
           storedApiKey={storedApiKey}
@@ -150,7 +150,7 @@ export default function HomeScreen() {
         />
 
         {!storedApiKey ? (
-          <View className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl">
+          <View className="bg-white p-8 rounded-2xl shadow-xl">
             <ApiKeySetup onApiKeySaved={handleApiKeySaved} />
           </View>
         ) : (
