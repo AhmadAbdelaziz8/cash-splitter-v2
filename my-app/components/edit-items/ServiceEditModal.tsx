@@ -79,7 +79,7 @@ const ServiceEditModal: React.FC<ServiceEditModalProps> = ({
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1 justify-center items-center bg-black/70"
+        className="flex-1 justify-center items-center bg-slate-200/70"
       >
         <View className="w-[90%] max-w-[400px] bg-white rounded-xl p-5 shadow-lg">
           <View className="flex-row justify-between items-center mb-5">

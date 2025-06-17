@@ -20,8 +20,7 @@ export default function RootLayout() {
     <ReceiptProvider>
       <SafeAreaProvider>
         <ThemeProvider value={DefaultTheme}>
-          {/* FIX: Add flex:1 to SafeAreaView */}
-          <SafeAreaView style={{ flex: 1 }}>
+          <SafeAreaView className="flex-1 bg-white">
             <Stack>
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="camera" options={{ headerShown: false }} />
@@ -35,7 +34,6 @@ export default function RootLayout() {
                 options={{ headerShown: false }}
               />
             </Stack>
-            {/* FIX: Move StatusBar inside SafeAreaView */}
             <StatusBar style="dark" />
           </SafeAreaView>
         </ThemeProvider>

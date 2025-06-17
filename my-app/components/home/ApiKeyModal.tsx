@@ -56,7 +56,7 @@ export default function ApiKeyModal({
       <View className="flex-1 bg-white ">
         {/* Header */}
         <View className="flex-row items-center justify-between p-6 border-b border-slate-200 ">
-          <Text className="text-xl font-bold text-slate-900 dark:text-white">
+          <Text className="text-xl font-bold text-slate-900 ">
             API Key Settings
           </Text>
           <TouchableOpacity
@@ -70,7 +70,7 @@ export default function ApiKeyModal({
         {/* Content */}
         <View className="flex-1 p-6">
           <View className="mb-8">
-            <Text className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
+            <Text className="text-lg font-semibold text-slate-900 mb-4">
               Google Gemini API Key
             </Text>
             <Text className="text-slate-600  mb-6 leading-6">
@@ -82,9 +82,7 @@ export default function ApiKeyModal({
               value={tempApiKey}
               onChangeText={onTempApiKeyChange}
               placeholder="Enter your API key..."
-              placeholderTextColor={
-                colorScheme === "dark" ? "#64748b" : "#94a3b8"
-              }
+              placeholderTextColor={"#94a3b8"}
               className="bg-slate-50  border border-slate-300  rounded-xl px-4 py-4 text-slate-900  text-base mb-4"
               multiline
               numberOfLines={3}

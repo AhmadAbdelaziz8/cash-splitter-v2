@@ -28,7 +28,7 @@ export function ThemedText({
       case "subtitle":
         return "text-xl font-bold";
       case "link":
-        return "text-base leading-7 text-blue-600 dark:text-blue-400";
+        return "text-base leading-7 text-blue-600";
       default:
         return "text-base leading-6";
     }

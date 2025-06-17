@@ -33,13 +33,7 @@ const ShareLinkScreen: React.FC = () => {
   };
 
   return (
-    <View
-      style={{
-        paddingBottom: insets.bottom || 20,
-        paddingTop: insets.top || 20,
-      }}
-      className="flex-1 bg-slate-900 px-5"
-    >
+    <View className="flex-1 px-5">
       {!shareableLink ? (
         <ShareErrorState onDone={handleDone} />
       ) : (

@@ -16,25 +16,25 @@ export default function ShareErrorState({ onDone }: ShareErrorStateProps) {
         className="mb-5"
       />
 
-      <Text className="text-3xl font-bold text-slate-100 text-center mb-4">
+      <Text className="text-3xl font-bold text-slate-800 text-center mb-4">
         No Link Available
       </Text>
 
-      <Text className="text-base text-slate-300 text-center mb-8 leading-6">
+      <Text className="text-base text-slate-600 text-center mb-8 leading-6">
         Something went wrong, and the shareable link could not be generated.
       </Text>
 
       <TouchableOpacity
-        className="bg-slate-700 flex-row items-center justify-center py-4 px-6 rounded-xl w-full shadow-lg"
+        className="bg-slate-200 flex-row items-center justify-center py-4 px-6 rounded-xl w-full shadow-lg"
         onPress={onDone}
       >
         <Ionicons
           name="home-outline"
           size={20}
-          color="#e2e8f0"
+          color="#475569"
           className="mr-3"
         />
-        <Text className="text-slate-200 text-lg font-semibold">
+        <Text className="text-slate-800 text-lg font-semibold">
           Back to Home
         </Text>
       </TouchableOpacity>

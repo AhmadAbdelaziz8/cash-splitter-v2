@@ -30,13 +30,13 @@ export default function Button({
   const getVariantClasses = () => {
     switch (variant) {
       case "secondary":
-        return "bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600";
+        return "bg-slate-200 border border-slate-300";
       case "ghost":
         return "bg-transparent";
       case "destructive":
-        return "bg-red-600 dark:bg-red-700";
+        return "bg-red-600";
       default:
-        return "bg-blue-600 dark:bg-blue-700";
+        return "bg-blue-600";
     }
   };
 
@@ -56,9 +56,9 @@ export default function Button({
   const getTextColorClasses = () => {
     switch (variant) {
       case "secondary":
-        return "text-slate-700 dark:text-slate-200";
+        return "text-slate-700";
       case "ghost":
-        return "text-blue-600 dark:text-blue-400";
+        return "text-blue-600";
       case "destructive":
         return "text-white";
       default:
