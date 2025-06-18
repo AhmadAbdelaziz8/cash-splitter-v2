@@ -1,7 +1,7 @@
 {
   "name": "cash-splitter-v2",
   "main": "expo-router/entry",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
@@ -10,7 +10,10 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "build-web": "expo build:web",
-    "deploy-static": "expo build:web && node ./scripts/deploy-static-page.js"
+    "deploy-static": "expo build:web && node ./scripts/deploy-static-page.js",
+    "build:production": "eas build --platform all --profile production",
+    "build:android": "eas build --platform android --profile production",
+    "build:ios": "eas build --platform ios --profile production"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",

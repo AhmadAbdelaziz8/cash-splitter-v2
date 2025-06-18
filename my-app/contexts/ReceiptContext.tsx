@@ -26,8 +26,6 @@ interface ReceiptContextType {
   receiptTax: number | null;
   serviceChargeValue: number | string | null; // Renamed from receiptService
   originalReceiptTotal: number | null; // Store the total as parsed from the receipt by LLM
-  userSelectedItemIds: string[];
-  userSubtotal: number;
   shareableLink: string | null;
   isProcessing: boolean; // New state
   processingError: string | null; // New state
@@ -41,12 +39,14 @@ interface ReceiptContextType {
   ) => void; // Allow optional quantity, defaults to 1
   updateItem: (id: string, updates: Partial<Omit<ReceiptItem, "id">>) => void;
   deleteItem: (id: string) => void;
-  toggleUserItemSelection: (id: string) => void;
   updateReceiptTax: (newTax: number | null) => void; // New mutator
   updateServiceChargeValue: (newService: number | string | null) => void; // Renamed from updateReceiptService
   generateShareableLink: () => void;
   processReceiptImage: (imageBase64: string) => Promise<void>; // New async function
-  setProcessingError: (error: string | null, errorType?: ReceiptParsingError | null) => void; // Updated function
+  setProcessingError: (
+    error: string | null,
+    errorType?: ReceiptParsingError | null
+  ) => void; // Updated function
   resetState: () => void;
 }
 
@@ -67,11 +67,11 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
   const [originalReceiptTotal, setOriginalReceiptTotal] = useState<
     number | null
   >(null);
-  const [userSelectedItemIds, setUserSelectedItemIds] = useState<string[]>([]);
   const [shareableLink, setShareableLink] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingError, setProcessingError] = useState<string | null>(null);
-  const [processingErrorType, setProcessingErrorType] = useState<ReceiptParsingError | null>(null);
+  const [processingErrorType, setProcessingErrorType] =
+    useState<ReceiptParsingError | null>(null);
 
   const setProcessedReceiptData = (data: GeminiParsedReceiptData) => {
     const processedItems: ReceiptItem[] = data.items.map((item, index) => ({
@@ -85,9 +85,6 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     setOriginalReceiptTotal(data.total);
     setReceiptTax(data.tax ?? null);
     setServiceChargeValue(data.service ?? null);
-
-    // Select all items by default
-    setUserSelectedItemIds(processedItems.map((item) => item.id));
   };
 
   const processReceiptImage = async (imgBase64: string) => {
@@ -145,13 +142,6 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
 
   const deleteItem = (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
-    setUserSelectedItemIds((prev) => prev.filter((itemId) => itemId !== id));
-  };
-
-  const toggleUserItemSelection = (id: string) => {
-    setUserSelectedItemIds((prev) =>
-      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
-    );
   };
 
   const updateReceiptTax = (newTax: number | null) => {
@@ -162,10 +152,9 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     setServiceChargeValue(newService);
   };
 
-  // Calculate user subtotal based on selected items
-  const userSubtotal = userSelectedItemIds.reduce((total, id) => {
-    const item = items.find((item) => item.id === id);
-    return item ? total + item.price * item.quantity : total;
+  // Calculate subtotal based on all items
+  const itemsSubtotal = items.reduce((total, item) => {
+    return total + item.price * item.quantity;
   }, 0);
 
   // Calculate service charge amount
@@ -174,44 +163,28 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     if (typeof serviceChargeValue === "string") {
       // Handle percentage service charge
       const percentage = parseFloat(serviceChargeValue.replace("%", ""));
-      return isNaN(percentage) ? 0 : (userSubtotal * percentage) / 100;
+      return isNaN(percentage) ? 0 : (itemsSubtotal * percentage) / 100;
     }
     // Handle fixed service charge
     return serviceChargeValue;
   })();
 
   // Calculate grand total
-  const receiptTotal = userSubtotal + (receiptTax ?? 0) + serviceChargeAmount;
+  const receiptTotal = itemsSubtotal + (receiptTax ?? 0) + serviceChargeAmount;
 
   const generateShareableLink = () => {
-    // Include ALL items in the shareable link, not just selected ones
+    // Include ALL items in the shareable link
     if (items.length === 0) {
       setShareableLink(null);
       return;
     }
 
-    // Calculate the total based on ALL items (not just selected ones)
-    const totalSubtotal = items.reduce(
-      (total, item) => total + item.price * item.quantity,
-      0
-    );
-    const serviceChargeAmount = (() => {
-      if (serviceChargeValue === null) return 0;
-      if (typeof serviceChargeValue === "string") {
-        const percentage = parseFloat(serviceChargeValue.replace("%", ""));
-        return isNaN(percentage) ? 0 : (totalSubtotal * percentage) / 100;
-      }
-      return serviceChargeValue;
-    })();
-    const totalWithTaxAndService =
-      totalSubtotal + (receiptTax ?? 0) + serviceChargeAmount;
-
     const shareData = {
       items: items, // Send ALL items
-      subtotal: totalSubtotal, // Total of all items
+      subtotal: itemsSubtotal, // Total of all items
       tax: receiptTax,
       service: serviceChargeValue,
-      total: totalWithTaxAndService, // Grand total including all items
+      total: receiptTotal, // Grand total including all items
     };
 
     try {
@@ -233,14 +206,16 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     setReceiptTax(null);
     setServiceChargeValue(null);
     setOriginalReceiptTotal(null);
-    setUserSelectedItemIds([]);
     setShareableLink(null);
     setIsProcessing(false);
     setProcessingError(null);
     setProcessingErrorType(null);
   };
 
-  const handleSetProcessingError = (error: string | null, errorType?: ReceiptParsingError | null) => {
+  const handleSetProcessingError = (
+    error: string | null,
+    errorType?: ReceiptParsingError | null
+  ) => {
     setProcessingError(error);
     setProcessingErrorType(errorType || null);
   };
@@ -255,8 +230,6 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         receiptTax,
         serviceChargeValue,
         originalReceiptTotal,
-        userSelectedItemIds,
-        userSubtotal,
         shareableLink,
         isProcessing,
         processingError,
@@ -267,7 +240,6 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         addItem,
         updateItem,
         deleteItem,
-        toggleUserItemSelection,
         updateReceiptTax,
         updateServiceChargeValue,
         generateShareableLink,

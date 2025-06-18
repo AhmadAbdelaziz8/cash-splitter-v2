@@ -5,16 +5,12 @@ import { ReceiptItem } from "@/types";
 
 interface ReceiptListItemProps {
   item: ReceiptItem;
-  isSelected: boolean;
-  onToggleSelection: (id: string) => void;
   onEdit: (item: ReceiptItem) => void;
   onDelete: (id: string) => void;
 }
 
 const ReceiptListItem: React.FC<ReceiptListItemProps> = ({
   item,
-  isSelected,
-  onToggleSelection,
   onEdit,
   onDelete,
 }) => {
@@ -22,19 +18,8 @@ const ReceiptListItem: React.FC<ReceiptListItemProps> = ({
     <View className="bg-white rounded-2xl mb-4 shadow-lg border border-slate-100 overflow-hidden">
       {/* Main Content */}
       <View className="p-5">
-        {/* Top Row: Checkbox + Item Name */}
+        {/* Top Row: Item Name */}
         <View className="flex-row items-center mb-4">
-          <TouchableOpacity
-            onPress={() => onToggleSelection(item.id)}
-            className="mr-4"
-          >
-            <Ionicons
-              name={isSelected ? "checkmark-circle" : "ellipse-outline"}
-              size={32}
-              color={isSelected ? "#3b82f6" : "#64748b"}
-            />
-          </TouchableOpacity>
-
           {/* Item Name - Takes full horizontal space */}
           <View className="flex-1 bg-green-100 px-4 py-3 rounded-xl">
             <Text

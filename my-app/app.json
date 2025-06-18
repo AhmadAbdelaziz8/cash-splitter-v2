@@ -1,15 +1,19 @@
 {
   "expo": {
-    "name": "cash-splitter-v2",
+    "name": "Cash Splitter",
     "slug": "cash-splitter-v2",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/appIcon.svg",
     "scheme": "cashsplitterv2",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.cashsplitterv2",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {

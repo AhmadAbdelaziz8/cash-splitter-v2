@@ -128,10 +128,10 @@ export const ANIMATIONS = {
 
 // Feature Flags
 export const FEATURES = {
-  ENABLE_ANALYTICS: false,
-  ENABLE_CRASH_REPORTING: false,
+  ENABLE_ANALYTICS: false, // Set to true if you want to add analytics
+  ENABLE_CRASH_REPORTING: false, // Set to true if you want to add crash reporting
   ENABLE_DEBUG_LOGS: __DEV__,
-  ENABLE_MOCK_DATA: false,
+  ENABLE_MOCK_DATA: __DEV__, // Only enable mock data in development
 } as const;
 
 // App Configuration

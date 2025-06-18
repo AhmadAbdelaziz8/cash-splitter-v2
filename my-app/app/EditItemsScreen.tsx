@@ -26,8 +26,6 @@ const EditItemsScreen: React.FC = () => {
     addItem,
     updateItem,
     deleteItem,
-    toggleUserItemSelection,
-    userSelectedItemIds,
     generateShareableLink,
     receiptTotal,
     receiptTax,
@@ -238,8 +236,6 @@ const EditItemsScreen: React.FC = () => {
             renderItem={({ item }) => (
               <ReceiptListItem
                 item={item}
-                isSelected={userSelectedItemIds.includes(item.id)}
-                onToggleSelection={toggleUserItemSelection}
                 onEdit={openItemModalToEdit}
                 onDelete={handleDeleteItem}
               />
