@@ -11,8 +11,8 @@ const CONFIG = {
 };
 
 let receiptData = [];
-let receiptTaxRate = 0;
-let receiptServiceCharge = null;
+let receiptTax = null; // Always percentage string like "14%"
+let receiptServiceCharge = null; // Always fixed number for equal distribution
 let numberOfPeopleForFixedService = CONFIG.DEFAULT_PEOPLE_COUNT;
 
 const peopleInputContainer = document.getElementById("people-input-container");
@@ -28,6 +28,39 @@ function formatAmount(amount) {
     return (0).toFixed(CONFIG.PRECISION);
   }
   return amount.toFixed(CONFIG.PRECISION);
+}
+
+// Helper function to determine if a number is approximately a percentage of a subtotal
+function isApproximatelyPercentage(
+  amount,
+  subtotal,
+  percentage,
+  tolerance = 0.01
+) {
+  if (subtotal === 0) return false;
+  const expectedAmount = (subtotal * percentage) / 100;
+  const difference = Math.abs(amount - expectedAmount);
+  const relativeError = difference / expectedAmount;
+  return relativeError <= tolerance;
+}
+
+// Helper function to ensure tax is always a percentage string (only if tax exists)
+function normalizeTax(taxValue, subtotal) {
+  if (taxValue === null || taxValue === undefined) {
+    return null; // No tax
+  }
+
+  if (typeof taxValue === "string" && taxValue.includes("%")) {
+    return taxValue; // Already a percentage
+  }
+
+  if (typeof taxValue === "number" && subtotal > 0) {
+    // Convert number to percentage by calculating percentage from subtotal
+    const percentage = (taxValue / subtotal) * 100;
+    return `${percentage.toFixed(1)}%`;
+  }
+
+  return null; // No valid tax
 }
 
 function createReceiptTile(item, index) {
@@ -144,7 +177,6 @@ function displayReceiptItems(items) {
 function calculateUserTotal() {
   let currentUserSubtotal = 0;
   let currentUserTotalTax = 0;
-  let currentUserTotalPercentageService = 0;
   let currentUserTotalFixedServicePortion = 0;
 
   receiptData.forEach((itemData, index) => {
@@ -169,25 +201,20 @@ function calculateUserTotal() {
       const pricePerSharerForItem = itemTotalPrice / peopleSharingThisItem;
 
       let itemTax = 0;
-      let itemPercentageService = 0;
 
-      if (receiptTaxRate > 0) {
-        itemTax = pricePerSharerForItem * receiptTaxRate;
-      }
-
+      // Calculate tax - always percentage applied to this person's items
       if (
-        receiptServiceCharge &&
-        typeof receiptServiceCharge === "string" &&
-        receiptServiceCharge.includes("%")
+        receiptTax !== null &&
+        typeof receiptTax === "string" &&
+        receiptTax.includes("%")
       ) {
-        const servicePercentage = parseFloat(receiptServiceCharge) / 100;
-        if (!isNaN(servicePercentage)) {
-          itemPercentageService = pricePerSharerForItem * servicePercentage;
+        const taxPercentage = parseFloat(receiptTax) / 100;
+        if (!isNaN(taxPercentage)) {
+          itemTax = pricePerSharerForItem * taxPercentage;
         }
       }
 
-      const userShareForItemDisplay =
-        pricePerSharerForItem + itemTax + itemPercentageService;
+      const userShareForItemDisplay = pricePerSharerForItem + itemTax;
 
       if (checkbox.checked) {
         shareElement.textContent = formatAmount(userShareForItemDisplay);
@@ -196,7 +223,6 @@ function calculateUserTotal() {
 
         currentUserSubtotal += pricePerSharerForItem;
         currentUserTotalTax += itemTax;
-        currentUserTotalPercentageService += itemPercentageService;
       } else {
         shareElement.textContent = formatAmount(0);
         shareElement.style.color = CONFIG.COLORS.UNSELECTED;
@@ -205,6 +231,7 @@ function calculateUserTotal() {
     }
   });
 
+  // Service charge is always fixed amount divided equally
   if (
     receiptServiceCharge &&
     typeof receiptServiceCharge === "number" &&
@@ -218,24 +245,17 @@ function calculateUserTotal() {
   const finalUserTotal =
     currentUserSubtotal +
     currentUserTotalTax +
-    currentUserTotalPercentageService +
     currentUserTotalFixedServicePortion;
+
   updateTotalDisplay(
     finalUserTotal,
     currentUserSubtotal,
     currentUserTotalTax,
-    currentUserTotalPercentageService,
     currentUserTotalFixedServicePortion
   );
 }
 
-function updateTotalDisplay(
-  total,
-  subtotal,
-  tax,
-  percentService,
-  fixedServicePortion
-) {
+function updateTotalDisplay(total, subtotal, tax, fixedServicePortion) {
   if (userTotalDiv) {
     let breakdownHtml = `<p class="summary-item">Subtotal: <span class="amount">${formatAmount(
       subtotal
@@ -243,11 +263,6 @@ function updateTotalDisplay(
     if (tax > 0) {
       breakdownHtml += `<p class="summary-item">Tax: <span class="amount">${formatAmount(
         tax
-      )}</span></p>`;
-    }
-    if (percentService > 0) {
-      breakdownHtml += `<p class="summary-item">Service (Percentage): <span class="amount">${formatAmount(
-        percentService
       )}</span></p>`;
     }
     if (fixedServicePortion > 0) {
@@ -276,25 +291,25 @@ function updateOverallSummary() {
   let overallTaxAmount = 0;
   let overallServiceAmount = 0;
   let serviceDisplayText = "Service:";
+  let taxDisplayText = "Tax:";
 
-  if (receiptTaxRate > 0) {
-    overallTaxAmount = overallSubtotal * receiptTaxRate;
+  // Calculate tax amount - always percentage
+  if (
+    receiptTax !== null &&
+    typeof receiptTax === "string" &&
+    receiptTax.includes("%")
+  ) {
+    const taxPercentage = parseFloat(receiptTax) / 100;
+    if (!isNaN(taxPercentage)) {
+      overallTaxAmount = overallSubtotal * taxPercentage;
+      taxDisplayText = `Tax (${receiptTax}):`;
+    }
   }
 
-  if (receiptServiceCharge) {
-    if (
-      typeof receiptServiceCharge === "string" &&
-      receiptServiceCharge.includes("%")
-    ) {
-      const servicePercentage = parseFloat(receiptServiceCharge) / 100;
-      if (!isNaN(servicePercentage)) {
-        overallServiceAmount = overallSubtotal * servicePercentage;
-        serviceDisplayText = `Service (${receiptServiceCharge}):`;
-      }
-    } else if (typeof receiptServiceCharge === "number") {
-      overallServiceAmount = receiptServiceCharge;
-      serviceDisplayText = `Service (Fixed Amount):`;
-    }
+  // Calculate service amount - always fixed amount
+  if (receiptServiceCharge && typeof receiptServiceCharge === "number") {
+    overallServiceAmount = receiptServiceCharge;
+    serviceDisplayText = `Service (Fixed Amount):`;
   }
 
   const overallGrandTotal =
@@ -306,9 +321,9 @@ function updateOverallSummary() {
         <p class="summary-item">Items Subtotal: <span class="amount">${formatAmount(
           overallSubtotal
         )}</span></p>
-        <p class="summary-item">Tax: <span class="amount">${formatAmount(
-          overallTaxAmount
-        )}</span></p>
+        <p class="summary-item">${taxDisplayText} <span class="amount">${formatAmount(
+    overallTaxAmount
+  )}</span></p>
         <p class="summary-item">${serviceDisplayText} <span class="amount">${formatAmount(
     overallServiceAmount
   )}</span></p>
@@ -374,8 +389,18 @@ function parseURLParameters() {
         console.error("Error parsing items from URL query parameters:", error);
       }
     }
-    if (taxFromUrl === null && taxParam !== null)
-      taxFromUrl = parseFloat(taxParam);
+    if (taxFromUrl === null && taxParam !== null) {
+      if (taxParam.includes("%")) {
+        taxFromUrl = taxParam; // Keep as percentage string
+      } else {
+        const numericTax = parseFloat(taxParam);
+        if (!isNaN(numericTax)) {
+          taxFromUrl = numericTax;
+        } else {
+          taxFromUrl = null;
+        }
+      }
+    }
     if (serviceFromUrl === null && serviceParam !== null) {
       const fixedServiceQuery = parseFloat(serviceParam);
       if (serviceParam.includes("%")) {
@@ -395,33 +420,48 @@ function parseURLParameters() {
     0
   );
 
-  if (taxFromUrl !== null && !isNaN(parseFloat(taxFromUrl))) {
-    const numericTax = parseFloat(taxFromUrl);
-    if (numericTax > 0 && currentOverallSubtotal > 0) {
-      receiptTaxRate = numericTax / currentOverallSubtotal;
+  // Handle tax - normalize to percentage when appropriate
+  // Handle tax - only if actually found (no defaults)
+  if (taxFromUrl !== null) {
+    if (typeof taxFromUrl === "string" && taxFromUrl.includes("%")) {
+      // Tax is already a percentage string like "14%"
+      receiptTax = taxFromUrl;
+    } else if (!isNaN(parseFloat(taxFromUrl))) {
+      // Tax is a numeric value - convert to percentage based on subtotal
+      const numericTax = parseFloat(taxFromUrl);
+      receiptTax = normalizeTax(numericTax, currentOverallSubtotal);
     } else {
-      receiptTaxRate = 0;
+      receiptTax = null;
     }
   } else {
-    receiptTaxRate = 0;
+    // No tax provided - don't default to anything
+    receiptTax = null;
   }
 
+  // Handle service - always treat as fixed amount (convert percentage to dollar amount if needed)
   if (serviceFromUrl !== null) {
+    let fixedService;
     if (typeof serviceFromUrl === "string" && serviceFromUrl.includes("%")) {
-      receiptServiceCharge = serviceFromUrl;
-      if (peopleInputContainer) peopleInputContainer.style.display = "none";
-    } else {
-      const fixedService = parseFloat(serviceFromUrl.toString());
-      if (!isNaN(fixedService) && fixedService >= 0) {
-        receiptServiceCharge = fixedService;
-        if (peopleInputContainer && fixedService > 0)
-          peopleInputContainer.style.display = "block";
-        else if (peopleInputContainer)
-          peopleInputContainer.style.display = "none";
+      // Convert percentage to fixed amount based on subtotal
+      const percentage = parseFloat(serviceFromUrl.replace("%", "")) / 100;
+      if (!isNaN(percentage)) {
+        fixedService = currentOverallSubtotal * percentage;
       } else {
-        receiptServiceCharge = null;
-        if (peopleInputContainer) peopleInputContainer.style.display = "none";
+        fixedService = 0;
       }
+    } else {
+      fixedService = parseFloat(serviceFromUrl.toString());
+    }
+
+    if (!isNaN(fixedService) && fixedService >= 0) {
+      receiptServiceCharge = fixedService;
+      if (peopleInputContainer && fixedService > 0)
+        peopleInputContainer.style.display = "block";
+      else if (peopleInputContainer)
+        peopleInputContainer.style.display = "none";
+    } else {
+      receiptServiceCharge = null;
+      if (peopleInputContainer) peopleInputContainer.style.display = "none";
     }
   } else {
     receiptServiceCharge = null;

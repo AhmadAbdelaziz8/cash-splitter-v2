@@ -11,13 +11,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-export type ServiceType = "fixed" | "percentage";
-
 export interface ServiceEditModalProps {
   isVisible: boolean;
-  currentService: number | string | null;
+  currentService: number | null;
   onClose: () => void;
-  onSave: (service: number | string | null) => void;
+  onSave: (service: number | null) => void;
 }
 
 const ServiceEditModal: React.FC<ServiceEditModalProps> = ({
@@ -27,18 +25,12 @@ const ServiceEditModal: React.FC<ServiceEditModalProps> = ({
   onSave,
 }) => {
   const [serviceValueInput, setServiceValueInput] = useState("");
-  const [serviceType, setServiceType] = useState<ServiceType>("fixed");
 
   useEffect(() => {
     if (isVisible) {
-      if (typeof currentService === "string" && currentService.includes("%")) {
-        setServiceType("percentage");
-        setServiceValueInput(currentService.replace("%", "").trim());
-      } else if (typeof currentService === "number") {
-        setServiceType("fixed");
+      if (typeof currentService === "number") {
         setServiceValueInput(currentService.toString());
       } else {
-        setServiceType("fixed");
         setServiceValueInput("");
       }
     }
@@ -56,17 +48,13 @@ const ServiceEditModal: React.FC<ServiceEditModalProps> = ({
     const numericValue = parseFloat(trimmedValue);
     if (isNaN(numericValue) || numericValue < 0) {
       Alert.alert(
-        "Invalid Service Value",
-        "Please enter a valid non-negative number for the service charge, or leave it empty to remove."
+        "Invalid Service Amount",
+        "Please enter a valid non-negative amount for the service charge, or leave it empty to remove."
       );
       return;
     }
 
-    if (serviceType === "percentage") {
-      onSave(`${numericValue}%`);
-    } else {
-      onSave(numericValue);
-    }
+    onSave(numericValue);
     onClose();
   };
 
@@ -91,70 +79,20 @@ const ServiceEditModal: React.FC<ServiceEditModalProps> = ({
             </TouchableOpacity>
           </View>
 
-          <View className="flex-row justify-around mb-5 bg-slate-100 rounded-lg p-1">
-            <TouchableOpacity
-              className={`flex-1 flex-row items-center justify-center py-2 px-1 rounded-md mx-1 ${
-                serviceType === "fixed" ? "bg-indigo-600" : ""
-              }`}
-              onPress={() => setServiceType("fixed")}
-            >
-              <Ionicons
-                name="cash-outline"
-                size={20}
-                color={serviceType === "fixed" ? "#ffffff" : "#64748b"}
-                className="mr-2"
-              />
-              <Text
-                className={`text-sm font-medium ${
-                  serviceType === "fixed" ? "text-white" : "text-slate-600"
-                }`}
-              >
-                Fixed Amount
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={`flex-1 flex-row items-center justify-center py-2 px-1 rounded-md mx-1 ${
-                serviceType === "percentage" ? "bg-indigo-600" : ""
-              }`}
-              onPress={() => setServiceType("percentage")}
-            >
-              <Ionicons
-                name="trending-up-outline"
-                size={20}
-                color={serviceType === "percentage" ? "#ffffff" : "#64748b"}
-                className="mr-2"
-              />
-              <Text
-                className={`text-sm font-medium ${
-                  serviceType === "percentage" ? "text-white" : "text-slate-600"
-                }`}
-              >
-                Percentage (%)
-              </Text>
-            </TouchableOpacity>
-          </View>
-
           <View className="mb-5">
             <Text className="text-sm text-slate-600 mb-2 font-medium">
-              {serviceType === "fixed"
-                ? "Service Amount ($)"
-                : "Service Percentage (%)"}
+              Service Amount ($)
             </Text>
             <View className="flex-row items-center bg-slate-100 rounded-lg border border-slate-300">
               <TextInput
                 className="flex-1 text-slate-900 px-4 py-3 text-base text-right"
-                placeholder={
-                  serviceType === "fixed" ? "e.g., 10.00" : "e.g., 15"
-                }
+                placeholder="e.g., 10.00"
                 placeholderTextColor="#64748b"
                 value={serviceValueInput}
                 onChangeText={setServiceValueInput}
                 keyboardType="numeric"
                 autoFocus={true}
               />
-              {serviceType === "percentage" && (
-                <Text className="text-lg text-slate-500 font-bold px-4">%</Text>
-              )}
             </View>
             <Text className="text-xs text-slate-500 mt-2 text-center">
               Enter the service charge. Leave empty or enter 0 to remove.

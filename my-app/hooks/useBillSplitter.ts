@@ -16,7 +16,10 @@ export interface BillSplitterActions {
   setActivePersonIndex: (index: number) => void;
   toggleItemSelection: (itemId: string) => void;
   toggleSplitSummary: () => void;
-  calculateSplitSummary: () => PersonSummary[];
+  calculateSplitSummary: (
+    tax: string | null,
+    service: number | null
+  ) => PersonSummary[];
   calculateTotal: () => number;
 }
 
@@ -71,7 +74,9 @@ export const useBillSplitter = (initialItems: ContextReceiptItem[]) => {
             return {
               ...item,
               assignedTo: isCurrentlyAssigned
-                ? item.assignedTo.filter((person: string) => person !== currentPerson)
+                ? item.assignedTo.filter(
+                    (person: string) => person !== currentPerson
+                  )
                 : [...item.assignedTo, currentPerson],
             };
           }
@@ -86,27 +91,52 @@ export const useBillSplitter = (initialItems: ContextReceiptItem[]) => {
     setState((prev) => ({ ...prev, showSplitSummary: !prev.showSplitSummary }));
   }, []);
 
-  const calculateSplitSummary = useCallback((): PersonSummary[] => {
-    return state.people.map((person) => {
-      const assignedItems = state.items.filter((item) =>
-        item.assignedTo.includes(person)
-      );
+  const calculateSplitSummary = useCallback(
+    (tax: string | null, service: number | null): PersonSummary[] => {
+      // Calculate tax percentage
+      const taxPercentage =
+        tax && tax.includes("%") ? parseFloat(tax.replace("%", "")) / 100 : 0;
+      // Service is divided equally among all people
+      const servicePerPerson = service ? service / state.people.length : 0;
 
-      const amount = assignedItems.reduce((sum, item) => {
-        const shareCount = item.assignedTo.length;
-        return sum + (shareCount > 0 ? item.price / shareCount : 0);
-      }, 0);
+      return state.people.map((person) => {
+        const assignedItems = state.items.filter((item) =>
+          item.assignedTo.includes(person)
+        );
 
-      return {
-        name: person,
-        amount,
-        items: assignedItems.map((item) => item.name),
-      };
-    });
-  }, [state.items, state.people]);
+        // Calculate subtotal for this person's items
+        const personSubtotal = assignedItems.reduce((sum, item) => {
+          const shareCount = item.assignedTo.length;
+          return (
+            sum +
+            (shareCount > 0 ? (item.price * item.quantity) / shareCount : 0)
+          );
+        }, 0);
+
+        // Calculate tax on this person's items (percentage of their subtotal)
+        const personTax = personSubtotal * taxPercentage;
+
+        // Total amount = subtotal + tax + equal share of service
+        const totalAmount = personSubtotal + personTax + servicePerPerson;
+
+        return {
+          name: person,
+          amount: totalAmount,
+          items: assignedItems.map((item) => item.name),
+          subtotal: personSubtotal,
+          tax: personTax,
+          service: servicePerPerson,
+        };
+      });
+    },
+    [state.items, state.people]
+  );
 
   const calculateTotal = useCallback((): number => {
-    return state.items.reduce((sum, item) => sum + item.price, 0);
+    return state.items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
   }, [state.items]);
 
   const actions: BillSplitterActions = {

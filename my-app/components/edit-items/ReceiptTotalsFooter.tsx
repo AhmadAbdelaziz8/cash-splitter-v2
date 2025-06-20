@@ -4,8 +4,8 @@ import { Ionicons } from "@expo/vector-icons";
 
 export interface ReceiptTotalsFooterProps {
   itemsSubtotal: number;
-  tax: number | null;
-  serviceCharge: number | string | null;
+  tax: string | null;
+  serviceCharge: number | null;
   originalReceiptTotal: number | null;
   grandTotal: number;
   onEditTax: () => void;
@@ -21,6 +21,23 @@ const ReceiptTotalsFooter: React.FC<ReceiptTotalsFooterProps> = ({
   onEditTax,
   onEditService,
 }) => {
+  const { taxDisplayAmount, taxDisplayText } = useMemo(() => {
+    let displayAmount = 0;
+    let displayText = "Tax:";
+
+    if (typeof tax === "string" && tax.includes("%")) {
+      const percentage = parseFloat(tax.replace("%", ""));
+      if (!isNaN(percentage)) {
+        displayAmount = (percentage / 100) * itemsSubtotal;
+        displayText = `Tax (${tax}):`;
+      }
+    }
+    return {
+      taxDisplayAmount: displayAmount,
+      taxDisplayText: displayText,
+    };
+  }, [tax, itemsSubtotal]);
+
   const { serviceDisplayAmount, serviceDisplayText } = useMemo(() => {
     let displayAmount = 0;
     let displayText = "Service Charge:";
@@ -28,21 +45,12 @@ const ReceiptTotalsFooter: React.FC<ReceiptTotalsFooterProps> = ({
     if (typeof serviceCharge === "number") {
       displayAmount = serviceCharge;
       displayText = "Service (Fixed):";
-    } else if (
-      typeof serviceCharge === "string" &&
-      serviceCharge.includes("%")
-    ) {
-      const percentage = parseFloat(serviceCharge.replace("%", ""));
-      if (!isNaN(percentage)) {
-        displayAmount = (percentage / 100) * itemsSubtotal;
-        displayText = `Service (${serviceCharge}):`;
-      }
     }
     return {
       serviceDisplayAmount: displayAmount,
       serviceDisplayText: displayText,
     };
-  }, [serviceCharge, itemsSubtotal]);
+  }, [serviceCharge]);
 
   const renderTotalRow = (
     label: string,
@@ -85,7 +93,12 @@ const ReceiptTotalsFooter: React.FC<ReceiptTotalsFooterProps> = ({
   return (
     <View className="mt-5 pt-4 border-t border-slate-200 bg-white px-4 pb-3 rounded-lg shadow-sm">
       {renderTotalRow("Items Subtotal:", `$${itemsSubtotal.toFixed(2)}`)}
-      {renderTotalRow("Tax:", `$${(tax ?? 0).toFixed(2)}`, false, onEditTax)}
+      {renderTotalRow(
+        taxDisplayText,
+        `$${taxDisplayAmount.toFixed(2)}`,
+        false,
+        onEditTax
+      )}
       {renderTotalRow(
         serviceDisplayText,
         `$${serviceDisplayAmount.toFixed(2)}`,

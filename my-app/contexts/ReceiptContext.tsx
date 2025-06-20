@@ -19,35 +19,38 @@ export { ReceiptItem } from "@/types";
 
 // Define the context state interface
 interface ReceiptContextType {
+  // Image data
   imageUri: string | null;
   imageBase64: string | null;
+  setImageData: (uri: string, base64: string) => void;
+
+  // Receipt items and totals
   items: ReceiptItem[];
-  receiptTotal: number; // This will now be the dynamically calculated grand total
-  receiptTax: number | null;
-  serviceChargeValue: number | string | null; // Renamed from receiptService
-  originalReceiptTotal: number | null; // Store the total as parsed from the receipt by LLM
+  itemsSubtotal: number; // Sum of all items
+  receiptTax: string | null; // Always percentage string like "14%"
+  serviceChargeValue: number | null; // Always fixed number for equal distribution
+  originalReceiptTotal: number | null;
+  receiptTotal: number; // Calculated total including tax and service
   shareableLink: string | null;
-  isProcessing: boolean; // New state
-  processingError: string | null; // New state
-  processingErrorType: ReceiptParsingError | null; // New state for error type
-  setImageUri: (uri: string | null) => void;
-  setImageBase64: (base64: string | null) => void;
-  // setItems: (items: ReceiptItem[]) => void; // Replaced by setProcessedReceiptData for initial load
-  setProcessedReceiptData: (data: GeminiParsedReceiptData) => void; // New function for initial LLM data
-  addItem: (
-    item: Omit<ReceiptItem, "id" | "quantity"> & { quantity?: number }
-  ) => void; // Allow optional quantity, defaults to 1
+
+  // Processing state
+  isProcessing: boolean;
+  processingError: string | null;
+  processingErrorType: ReceiptParsingError | null;
+
+  // Actions
+  addItem: (item: Omit<ReceiptItem, "id">) => void;
   updateItem: (id: string, updates: Partial<Omit<ReceiptItem, "id">>) => void;
   deleteItem: (id: string) => void;
-  updateReceiptTax: (newTax: number | null) => void; // New mutator
-  updateServiceChargeValue: (newService: number | string | null) => void; // Renamed from updateReceiptService
+  updateReceiptTax: (newTax: string | null) => void; // Always percentage string
+  updateServiceChargeValue: (newService: number | null) => void; // Always fixed number
+  parseReceipt: () => Promise<void>;
   generateShareableLink: () => void;
-  processReceiptImage: (imageBase64: string) => Promise<void>; // New async function
+  resetState: () => void;
   setProcessingError: (
     error: string | null,
     errorType?: ReceiptParsingError | null
-  ) => void; // Updated function
-  resetState: () => void;
+  ) => void;
 }
 
 // Create context with default values
@@ -60,10 +63,10 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [items, setItems] = useState<ReceiptItem[]>([]);
-  const [receiptTax, setReceiptTax] = useState<number | null>(null);
-  const [serviceChargeValue, setServiceChargeValue] = useState<
-    number | string | null
-  >(null);
+  const [receiptTax, setReceiptTax] = useState<string | null>(null);
+  const [serviceChargeValue, setServiceChargeValue] = useState<number | null>(
+    null
+  );
   const [originalReceiptTotal, setOriginalReceiptTotal] = useState<
     number | null
   >(null);
@@ -81,74 +84,163 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
       quantity: item.quantity ?? 1,
     }));
 
+    // Calculate subtotal to help normalize tax
+    const subtotal = processedItems.reduce((total, item) => {
+      return total + item.price * item.quantity;
+    }, 0);
+
+    // Normalize tax - prefer percentage when appropriate
+    let finalTax = normalizeTax(data.tax, subtotal);
+
     setItems(processedItems);
     setOriginalReceiptTotal(data.total);
-    setReceiptTax(data.tax ?? null);
+    setReceiptTax(finalTax);
     setServiceChargeValue(data.service ?? null);
   };
 
-  const processReceiptImage = async (imgBase64: string) => {
+  // Helper function to normalize tax (convert fixed amounts to percentage when appropriate)
+  const normalizeTax = (
+    taxValue: number | string | null | undefined,
+    subtotal: number
+  ): string | number | null => {
+    if (taxValue === null || taxValue === undefined) {
+      return "14%"; // Default to 14% percentage
+    }
+
+    if (typeof taxValue === "string" && taxValue.includes("%")) {
+      return taxValue; // Already a percentage
+    }
+
+    if (typeof taxValue === "number" && subtotal > 0) {
+      // Check common tax percentages with 3% tolerance
+      const commonPercentages = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+
+      for (const percentage of commonPercentages) {
+        const expectedAmount = (subtotal * percentage) / 100;
+        const difference = Math.abs(taxValue - expectedAmount);
+        const relativeError = difference / expectedAmount;
+
+        if (relativeError <= 0.03) {
+          return `${percentage}%`; // Convert to percentage
+        }
+      }
+
+      // If it doesn't match any common percentage, keep as fixed amount
+      return taxValue;
+    }
+
+    return "14%"; // Default fallback
+  };
+
+  const processReceiptImage = async (imageBase64: string): Promise<void> => {
     setIsProcessing(true);
     setProcessingError(null);
     setProcessingErrorType(null);
 
     try {
-      const result = await apiReceiptService.parseReceiptImage(imgBase64);
+      const result = await apiReceiptService.parseReceiptImage(imageBase64);
 
       if (result.success && result.data) {
-        setProcessedReceiptData(result.data);
+        // Set parsed items
+        const parsedItems: ReceiptItem[] = result.data.items.map(
+          (item, index) => ({
+            id: `item_${Date.now()}_${index}`,
+            name: item.itemName,
+            price: item.itemPrice,
+            quantity: item.quantity || 1,
+            assignedTo: [],
+          })
+        );
+
+        setItems(parsedItems);
+        setOriginalReceiptTotal(result.data.total);
+        
+        // Tax is only set if found on receipt (no default)
+        if (result.data.tax) {
+          setReceiptTax(result.data.tax);
+        } else {
+          setReceiptTax(null); // No tax found, don't default
+        }
+        
+        // Service is only set if found on receipt
+        setServiceChargeValue(result.data.service || null);
       } else {
-        const errorMessage = result.error || "Failed to process receipt image.";
-        const errorType = result.errorType || null;
-        setProcessingError(errorMessage);
+        // Handle parsing errors
+        const errorType = result.errorType || ReceiptParsingError.API_ERROR;
+        setProcessingError(result.error || "Failed to parse receipt");
         setProcessingErrorType(errorType);
-        throw new Error(errorMessage);
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "An unexpected error occurred while processing the receipt.";
-      // If we don't already have an error type from the service, set a generic one
-      if (!processingErrorType) {
-        setProcessingErrorType(ReceiptParsingError.UNREADABLE_IMAGE);
-      }
-      setProcessingError(errorMessage);
-      throw error; // Re-throw so calling code can handle it
+      setProcessingError(
+        error instanceof Error ? error.message : "Unknown error occurred"
+      );
+      setProcessingErrorType(ReceiptParsingError.API_ERROR);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const addItem = (
-    item: Omit<ReceiptItem, "id" | "quantity"> & { quantity?: number }
-  ) => {
+  const addItem = (item: Omit<ReceiptItem, "id">) => {
     const newItem: ReceiptItem = {
       id: `item_${Date.now()}`,
       ...item,
       quantity: item.quantity ?? 1,
     };
-    setItems((prev) => [...prev, newItem]);
+
+    setItems((prev) => {
+      const updatedItems = [...prev, newItem];
+
+      // If this is the first item and no tax is set, set default 14% tax
+      if (prev.length === 0 && receiptTax === null) {
+        setReceiptTax("14%");
+      }
+
+      return updatedItems;
+    });
   };
 
   const updateItem = (
     id: string,
     updates: Partial<Omit<ReceiptItem, "id">>
   ) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
-    );
+    setItems((prev) => {
+      const updatedItems = prev.map((item) =>
+        item.id === id ? { ...item, ...updates } : item
+      );
+
+      // If tax is currently "14%", keep it as "14%"
+      if (receiptTax === "14%") {
+        setReceiptTax("14%");
+      }
+
+      return updatedItems;
+    });
   };
 
   const deleteItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+    setItems((prev) => {
+      const updatedItems = prev.filter((item) => item.id !== id);
+
+      // If tax is currently "14%", handle appropriately
+      if (receiptTax === "14%") {
+        if (updatedItems.length === 0) {
+          // No items left, set tax to null
+          setReceiptTax(null);
+        } else {
+          // Keep 14% tax rate
+          setReceiptTax("14%");
+        }
+      }
+
+      return updatedItems;
+    });
   };
 
-  const updateReceiptTax = (newTax: number | null) => {
+  const updateReceiptTax = (newTax: string | null) => {
     setReceiptTax(newTax);
   };
 
-  const updateServiceChargeValue = (newService: number | string | null) => {
+  const updateServiceChargeValue = (newService: number | null) => {
     setServiceChargeValue(newService);
   };
 
@@ -157,20 +249,23 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
     return total + item.price * item.quantity;
   }, 0);
 
-  // Calculate service charge amount
+  // Calculate tax amount
+  const taxAmount = (() => {
+    if (receiptTax === null) return 0;
+    // Tax is always percentage string
+    const percentage = parseFloat(receiptTax.replace("%", ""));
+    return isNaN(percentage) ? 0 : (itemsSubtotal * percentage) / 100;
+  })();
+
+  // Calculate service charge amount (always fixed number)
   const serviceChargeAmount = (() => {
     if (serviceChargeValue === null) return 0;
-    if (typeof serviceChargeValue === "string") {
-      // Handle percentage service charge
-      const percentage = parseFloat(serviceChargeValue.replace("%", ""));
-      return isNaN(percentage) ? 0 : (itemsSubtotal * percentage) / 100;
-    }
-    // Handle fixed service charge
+    // Service is always fixed amount
     return serviceChargeValue;
   })();
 
   // Calculate grand total
-  const receiptTotal = itemsSubtotal + (receiptTax ?? 0) + serviceChargeAmount;
+  const receiptTotal = itemsSubtotal + taxAmount + serviceChargeAmount;
 
   const generateShareableLink = () => {
     // Include ALL items in the shareable link
@@ -226,10 +321,11 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         imageUri,
         imageBase64,
         items,
-        receiptTotal,
+        itemsSubtotal,
         receiptTax,
         serviceChargeValue,
         originalReceiptTotal,
+        receiptTotal,
         shareableLink,
         isProcessing,
         processingError,
@@ -242,10 +338,10 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         deleteItem,
         updateReceiptTax,
         updateServiceChargeValue,
-        generateShareableLink,
         processReceiptImage,
-        setProcessingError: handleSetProcessingError,
+        generateShareableLink,
         resetState,
+        setProcessingError: handleSetProcessingError,
       }}
     >
       {children}

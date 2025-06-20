@@ -10,8 +10,8 @@ export interface ReceiptItem {
 export interface ParsedReceiptData {
   items: ReceiptItem[];
   total: number;
-  tax?: number;
-  service?: number | string; // Can be a fixed number or a percentage string e.g., "10%"
+  tax?: string; // Optional percentage string e.g., "14%" (undefined if no tax)
+  service?: number; // Optional fixed number for equal distribution (undefined if no service)
 }
 
 // Enhanced error types for better user experience
@@ -69,12 +69,12 @@ export async function parseReceiptImage(
           },
         },
         total: { type: SchemaType.NUMBER },
-        tax: { type: SchemaType.NUMBER, nullable: true },
+        tax: { type: SchemaType.STRING, nullable: true },
         service: {
-          type: [SchemaType.NUMBER, SchemaType.STRING], // Accept both number and string
+          type: SchemaType.NUMBER,
           nullable: true,
           description:
-            "Service charge. Can be a fixed amount (number) or a percentage (string, e.g., '10%').",
+            "Service charge as fixed amount for equal distribution among participants.",
         },
       },
       required: ["items", "total"],
@@ -95,12 +95,32 @@ export async function parseReceiptImage(
       },
     };
 
-    const prompt = `Analyze this receipt image.
-Extract all distinct items with their individual prices and quantities if available.
-Identify any overall tax amount.
-Identify any service charge. If the service charge is a percentage, return it as a string (e.g., "10%", "12.5%"). If it's a fixed amount, return it as a number.
-If quantity for an item is not found, it can be omitted or set to null (it will default to 1).
-If tax or service charges are not found, they can be omitted or set to null.`;
+    const prompt = `Analyze this receipt image and extract the following information:
+
+1. ITEMS: Extract all distinct items with their individual prices and quantities if available.
+
+2. TAX CALCULATION: 
+   - Only include tax if it's actually shown on the receipt
+   - If tax amount is shown, calculate: (tax_amount / subtotal) × 100 to get percentage
+   - Return as percentage string format (e.g., "14%", "15%", "13.5%")
+   - If NO tax is shown on receipt, set tax to null (do not default to any value)
+   - NEVER return tax as a fixed dollar amount - always as percentage or null
+
+3. SERVICE CHARGE: 
+   - Include ANY service-related charges: service fees, delivery fees, tips, etc.
+   - Service charges MUST ALWAYS be returned as fixed dollar amounts (numbers)
+   - If service shows as percentage on receipt, calculate the actual dollar amount
+   - Examples: delivery fee $3.50 → return 3.50, service charge $15.00 → return 15.00
+   - If no service charges found, set to null
+   - Service will be divided equally among all participants
+
+4. VALIDATION:
+   - Ensure the total makes mathematical sense: total ≈ subtotal + tax + service
+   - If quantities are not found for items, default to 1
+   - Tax: percentage string format or null
+   - Service: fixed amount (number) or null
+
+Return the data in the specified JSON format.`;
 
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }, imagePart] }],
@@ -221,72 +241,86 @@ function validateParsedData(data: any): { isValid: boolean; error?: string } {
     }
   }
 
+  // Validate optional tax field
   if (data.tax !== undefined && data.tax !== null) {
     if (typeof data.tax === "string") {
-      const parsed = parseFloat(data.tax);
-      if (isNaN(parsed)) {
-        return { isValid: false, error: `Invalid tax value: ${data.tax}` };
-      }
-      data.tax = parsed;
-    } else if (typeof data.tax !== "number" || isNaN(data.tax)) {
-      return { isValid: false, error: `Tax is not a number: ${data.tax}` };
-    }
-  } else if (data.tax === null) {
-    // delete data.tax; // Keep null as a valid state, or handle as 0 in context
-  }
-
-  // Validate optional service field
-  if (data.service !== undefined && data.service !== null) {
-    if (typeof data.service === "string") {
-      // Check if it's a percentage string like "10%", "12.5%"
-      if (!/^\d+(\.\d+)?%$/.test(data.service)) {
-        // If it's a string but not a valid percentage, try to parse as number.
-        // This handles cases where LLM might send "15.00" as string for a fixed amount.
-        const parsedServiceNum = parseFloat(data.service);
-        if (isNaN(parsedServiceNum)) {
+      // Check if it's a percentage string like "14%", "15.5%"
+      if (!/^\d+(\.\d+)?%$/.test(data.tax)) {
+        // If it's a string but not a valid percentage, try to convert to percentage
+        const parsedTaxNum = parseFloat(data.tax);
+        if (isNaN(parsedTaxNum)) {
           return {
             isValid: false,
-            error: `Invalid service string format: ${data.service}. Expected number or percentage string (e.g., '10%').`,
+            error: `Invalid tax string format: ${data.tax}. Expected percentage string (e.g., '14%').`,
           };
         }
-        data.service = parsedServiceNum; // Convert to number if it was a numeric string
+        data.tax = `${parsedTaxNum}%`; // Convert to percentage string
       }
-      // If it IS a valid percentage string (e.g. "10%"), keep as string.
+      // If it IS a valid percentage string (e.g. "14%"), keep as string.
+    } else if (typeof data.tax === "number") {
+      // Convert number to percentage string (assume it's already a percentage value)
+      data.tax = `${data.tax}%`;
+    } else {
+      return {
+        isValid: false,
+        error: `Tax must be a percentage string: ${data.tax}`,
+      };
+    }
+  } else if (data.tax === null) {
+    // Keep null as a valid state
+  }
+
+  // Validate optional service field - always convert to number
+  if (data.service !== undefined && data.service !== null) {
+    if (typeof data.service === "string") {
+      // Try to parse as number (removing any % symbols if present)
+      const parsedServiceNum = parseFloat(data.service.replace("%", ""));
+      if (isNaN(parsedServiceNum)) {
+        return {
+          isValid: false,
+          error: `Invalid service string: ${data.service}. Expected number.`,
+        };
+      }
+      data.service = parsedServiceNum; // Convert to number
     } else if (typeof data.service !== "number" || isNaN(data.service)) {
       return {
         isValid: false,
-        error: `Service is not a valid number or percentage string: ${data.service}`,
+        error: `Service must be a number: ${data.service}`,
       };
     }
   } else if (data.service === null) {
-    // delete data.service; // Keep null as a valid state, or handle as 0/not present in context
+    // Keep null as a valid state
   }
 
   return { isValid: true };
 }
 
 function getMockData(): ParsedReceiptData {
-  // Updated mock data to reflect possible service charge types
-  const serviceType = Math.random();
-  let mockService: number | string | undefined;
-  if (serviceType < 0.4) {
-    mockService = 15.0; // Fixed amount
-  } else if (serviceType < 0.8) {
-    mockService = "12.5%"; // Percentage
-  } else {
-    mockService = undefined; // No service charge
-  }
+  const items = [
+    { itemName: "Burger", itemPrice: 10.99, quantity: 1 },
+    { itemName: "Fries", itemPrice: 3.5, quantity: 2 },
+    { itemName: "Soda", itemPrice: 2.5, quantity: 1 },
+    { itemName: "Salad", itemPrice: 8.75, quantity: 1 },
+    { itemName: "Coffee", itemPrice: 3.25, quantity: 2 },
+  ];
+
+  // Calculate subtotal
+  const subtotal = items.reduce(
+    (acc, item) => acc + item.itemPrice * item.quantity,
+    0
+  );
+
+  // No tax in mock data (only if actually found on receipt)
+  const tax = undefined;
+  const taxAmount = 0;
+
+  // Example delivery fee as service charge
+  const service = 3.5; // Delivery fee
 
   return {
-    items: [
-      { itemName: "Burger", itemPrice: 10.99, quantity: 1 },
-      { itemName: "Fries", itemPrice: 3.5, quantity: 2 },
-      { itemName: "Soda", itemPrice: 2.5, quantity: 1 },
-      { itemName: "Salad", itemPrice: 8.75, quantity: 1 },
-      { itemName: "Coffee", itemPrice: 3.25, quantity: 2 },
-    ],
-    total: 40.0, // Example total, should be calculated based on items, tax, service in real use
-    tax: 3.64,
-    service: mockService,
+    items,
+    total: subtotal + taxAmount + service,
+    tax,
+    service,
   };
 }

@@ -13,9 +13,9 @@ import { Ionicons } from "@expo/vector-icons";
 
 export interface TaxEditModalProps {
   isVisible: boolean;
-  currentTax: number | null;
+  currentTax: string | null;
   onClose: () => void;
-  onSave: (tax: number | null) => void;
+  onSave: (tax: string | null) => void;
 }
 
 const TaxEditModal: React.FC<TaxEditModalProps> = ({
@@ -28,12 +28,17 @@ const TaxEditModal: React.FC<TaxEditModalProps> = ({
 
   useEffect(() => {
     if (isVisible) {
-      setTaxInput(currentTax?.toString() ?? "");
+      if (typeof currentTax === "string" && currentTax.includes("%")) {
+        setTaxInput(currentTax.replace("%", "").trim());
+      } else {
+        setTaxInput("14"); // Default to 14%
+      }
     }
   }, [currentTax, isVisible]);
 
   const handleSave = () => {
     const trimmedTax = taxInput.trim().replace(",", ".");
+
     if (trimmedTax === "") {
       onSave(null);
       onClose();
@@ -43,12 +48,13 @@ const TaxEditModal: React.FC<TaxEditModalProps> = ({
     const numericTax = parseFloat(trimmedTax);
     if (isNaN(numericTax) || numericTax < 0) {
       Alert.alert(
-        "Invalid Tax Amount",
-        "Please enter a valid non-negative number for the tax, or leave it empty to remove tax."
+        "Invalid Tax Percentage",
+        "Please enter a valid non-negative percentage for the tax, or leave it empty to remove tax."
       );
       return;
     }
-    onSave(numericTax);
+
+    onSave(`${numericTax}%`);
     onClose();
   };
 
@@ -65,9 +71,7 @@ const TaxEditModal: React.FC<TaxEditModalProps> = ({
       >
         <View className="w-[90%] max-w-[400px] bg-white rounded-xl p-5 shadow-lg">
           <View className="flex-row justify-between items-center mb-5">
-            <Text className="text-xl font-bold text-slate-900">
-              Edit Tax Amount
-            </Text>
+            <Text className="text-xl font-bold text-slate-900">Edit Tax</Text>
             <TouchableOpacity onPress={onClose} className="p-1">
               <Ionicons name="close-circle-outline" size={30} color="#94a3b8" />
             </TouchableOpacity>
@@ -75,19 +79,23 @@ const TaxEditModal: React.FC<TaxEditModalProps> = ({
 
           <View className="mb-5">
             <Text className="text-sm text-slate-600 mb-2 font-medium">
-              Tax Amount ($)
+              Tax Percentage (%)
             </Text>
-            <TextInput
-              className="bg-slate-100 text-slate-900 rounded-lg px-4 py-3 text-base border border-slate-300 text-right"
-              placeholder="e.g., 5.75 or leave empty"
-              placeholderTextColor="#64748b"
-              value={taxInput}
-              onChangeText={setTaxInput}
-              keyboardType="numeric"
-              autoFocus={true}
-            />
+            <View className="flex-row items-center bg-slate-100 rounded-lg border border-slate-300">
+              <TextInput
+                className="flex-1 text-slate-900 px-4 py-3 text-base text-right"
+                placeholder="e.g., 14"
+                placeholderTextColor="#64748b"
+                value={taxInput}
+                onChangeText={setTaxInput}
+                keyboardType="numeric"
+                autoFocus={true}
+              />
+              <Text className="text-lg text-slate-500 font-bold px-4">%</Text>
+            </View>
             <Text className="text-xs text-slate-500 mt-2 text-center">
-              Enter the total tax amount. Leave empty or enter 0 to remove tax.
+              Enter the tax percentage (typically 14%). Leave empty to remove
+              tax.
             </Text>
           </View>
 

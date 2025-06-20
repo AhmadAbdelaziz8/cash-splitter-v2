@@ -23,16 +23,16 @@ export interface ContextReceiptItem extends ReceiptItem {
 }
 
 // ===== RECEIPT DATA TYPES =====
-export interface ParsedReceiptData {
-  items: LLMReceiptItem[];
+export interface ReceiptData {
+  items: ReceiptItem[];
   total: number;
-  tax?: number;
-  service?: number | string;
+  tax?: string; // Always percentage string e.g., "14%"
+  service?: number; // Always fixed number for equal distribution
 }
 
 export interface ParseResult {
   success: boolean;
-  data?: ParsedReceiptData;
+  data?: ReceiptData;
   error?: string;
 }
 
@@ -41,6 +41,9 @@ export interface PersonSummary {
   name: string;
   amount: number;
   items: string[];
+  subtotal?: number;
+  tax?: number;
+  service?: number;
 }
 
 // ===== CAMERA TYPES =====
