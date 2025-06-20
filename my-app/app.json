@@ -4,7 +4,7 @@
     "slug": "cash-splitter-v2",
     "version": "2.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/appIcon.svg",
+    "icon": "./assets/images/appIcon.png",
     "scheme": "cashsplitterv2",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -17,7 +17,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/appIcon.svg",
+        "foregroundImage": "./assets/images/appIcon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,

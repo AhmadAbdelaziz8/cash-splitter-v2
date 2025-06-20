@@ -10,11 +10,9 @@ export interface ReceiptItem {
 export interface ParsedReceiptData {
   items: ReceiptItem[];
   total: number;
-  tax?: string; // Optional percentage string e.g., "14%" (undefined if no tax)
-  service?: number; // Optional fixed number for equal distribution (undefined if no service)
+  tax?: string;
+  service?: number;
 }
-
-// Enhanced error types for better user experience
 export enum ReceiptParsingError {
   NO_ITEMS_FOUND = "NO_ITEMS_FOUND",
   UNREADABLE_IMAGE = "UNREADABLE_IMAGE",
@@ -35,7 +33,6 @@ export async function parseReceiptImage(
   base64Image: string,
   mimeType: string = "image/jpeg"
 ): Promise<ParseResult> {
-  // Get API key from storage instead of environment variable
   const API_KEY = await getApiKey();
 
   if (!API_KEY) {
@@ -50,7 +47,7 @@ export async function parseReceiptImage(
   try {
     const genAI = new GoogleGenerativeAI(API_KEY);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash", // Consider using the latest available model version
+      model: "gemini-2.5-flash",
     });
 
     const receiptSchema: any = {
@@ -136,7 +133,9 @@ Return the data in the specified JSON format.`;
 
     try {
       parsedData = JSON.parse(text);
-    } catch (directParseError) {
+    } catch (error) {
+      console.error("Error parsing JSON:", error);
+      console.log("text", text);
       try {
         const codeBlockMatch = text.match(/```(?:json)?\s*(\{.*?\})\s*```/s);
         if (codeBlockMatch) {

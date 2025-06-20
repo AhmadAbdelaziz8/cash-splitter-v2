@@ -31,7 +31,7 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
 }
 expoAutolinking.useExpoModules()
 
-rootProject.name = 'cash-splitter-v2'
+rootProject.name = 'Cash Splitter'
 
 expoAutolinking.useExpoVersionCatalog()
 
