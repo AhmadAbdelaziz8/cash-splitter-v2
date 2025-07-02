@@ -10,7 +10,6 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "build-web": "expo build:web",
-    "deploy-static": "expo build:web && node ./scripts/deploy-static-page.js",
     "build:production": "eas build --platform all --profile production",
     "build:android": "eas build --platform android --profile production",
     "build:ios": "eas build --platform ios --profile production"
@@ -28,7 +27,7 @@
     "expo-blur": "~14.1.4",
     "expo-camera": "~16.1.7",
     "expo-constants": "~17.1.6",
-    "expo-dev-client": "^5.2.0",
+    "expo-dev-client": "~5.2.2",
     "expo-file-system": "~18.1.10",
     "expo-font": "~13.3.1",
     "expo-haptics": "~14.1.4",

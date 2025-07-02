@@ -1,16 +1,13 @@
 import { GoogleGenerativeAI, Part, SchemaType } from "@google/generative-ai";
-// Import types from geminiConfig.ts
 import {
   ParseResult,
-  ParsedReceiptData, // This is Gemini's ParsedReceiptData with strict ReceiptItem
-  ReceiptItem, // This is Gemini's ReceiptItem with quantity: number
+  ParsedReceiptData, 
+  ReceiptItem,
 } from "@/config/geminiConfig";
 import { API, MESSAGES } from "@/constants/AppConstants";
 import { errorHandler, ErrorType } from "@/utils/errorUtils";
-import { getApiKey } from "@/services/apiKeyService"; // Add import for user's API key
+import { getApiKey } from "@/services/apiKeyService";
 
-// LLMReceiptItem can be kept if the initial parsing step from LLM is slightly different
-// before validation, but validateParsedData should output items conforming to ReceiptItem.
 interface LLMReceiptItemForParsing {
   itemName: string;
   itemPrice: number;

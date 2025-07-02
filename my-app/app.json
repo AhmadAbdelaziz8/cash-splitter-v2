@@ -7,7 +7,7 @@
     "icon": "./assets/images/appIcon.png",
     "scheme": "cashsplitterv2",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.cashsplitterv2",
@@ -32,7 +32,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/appIcon.svg"
+      "favicon": "./assets/images/appIcon.png"
     },
     "plugins": [
       "expo-router",

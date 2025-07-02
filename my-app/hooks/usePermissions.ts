@@ -34,28 +34,24 @@ export const usePermissions = () => {
 
   const requestCamera = async (): Promise<boolean> => {
     try {
+      // Additional safety check for Samsung devices
+      if (!cameraPermission) {
+        console.warn("Camera permission object not available");
+        return false;
+      }
+
       const result = await requestCameraPermission();
 
       if (!result.granted) {
-        errorHandler.showUserError(
-          "Camera Permission Required",
-          "This app needs camera access to function properly. Please grant permission in your device settings.",
-          [
-            { text: "Cancel", style: "cancel" },
-            { text: "Open Settings", onPress: () => Linking.openSettings() },
-          ]
-        );
+        // More gentle error handling - no immediate alerts
+        console.warn("Camera permission not granted");
         return false;
       }
 
       return true;
     } catch (error) {
-      errorHandler.logError(
-        ErrorType.PERMISSION,
-        "Failed to request camera permission",
-        error instanceof Error ? error : undefined,
-        "usePermissions.requestCamera"
-      );
+      console.error("Camera permission error:", error);
+      // Don't crash the app, just log and return false
       return false;
     }
   };

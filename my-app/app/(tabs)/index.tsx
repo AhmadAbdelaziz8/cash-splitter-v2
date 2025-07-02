@@ -17,6 +17,7 @@ export default function HomeScreen() {
   const [isSavingKey, setIsSavingKey] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [tempApiKey, setTempApiKey] = useState("");
+  const [hasError, setHasError] = useState(false);
   const colorScheme = useColorScheme() as ColorScheme;
 
   useEffect(() => {
@@ -29,12 +30,22 @@ export default function HomeScreen() {
           setTempApiKey(key);
         }
       } catch (error) {
-        Alert.alert("Error", "Could not load API key from storage.");
+        console.error("Error loading API key:", error);
+        setHasError(true);
+        // Don't show alert immediately to prevent crash
       } finally {
         setIsLoadingKey(false);
       }
     };
-    loadApiKey();
+
+    // Wrap in try-catch to prevent startup crashes
+    try {
+      loadApiKey();
+    } catch (error) {
+      console.error("Critical error in useEffect:", error);
+      setHasError(true);
+      setIsLoadingKey(false);
+    }
   }, []);
 
   const handleSettingsPress = () => {
@@ -136,6 +147,20 @@ export default function HomeScreen() {
         <ActivityIndicator size="large" color="#0ea5e9" />
         <Text className="text-slate-600 mt-6 text-lg">
           Loading Secure Storage...
+        </Text>
+      </View>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <View className="flex-1 items-center justify-center bg-slate-50 p-6">
+        <Text className="text-red-600 text-xl font-bold mb-4">App Error</Text>
+        <Text className="text-slate-600 text-center mb-6">
+          Something went wrong. The app is in safe mode.
+        </Text>
+        <Text className="text-slate-500 text-sm text-center">
+          Please restart the app or contact support.
         </Text>
       </View>
     );
