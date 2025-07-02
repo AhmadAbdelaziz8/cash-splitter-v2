@@ -18,6 +18,7 @@ export default function CameraScreen() {
     permission,
     permissionStatus,
     isCameraReady,
+    isCapturing,
     requestCameraPermission,
     handleCameraReady,
     toggleCameraFacing,
@@ -64,6 +65,7 @@ export default function CameraScreen() {
         onCapturePhoto={handleCapturePhoto}
         onSelectFromGallery={handleSelectFromGallery}
         isCameraReady={isCameraReady}
+        isCapturing={isCapturing}
         insetsBottom={insets.bottom}
       />
     </View>

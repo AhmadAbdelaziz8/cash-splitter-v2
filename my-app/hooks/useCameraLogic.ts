@@ -17,6 +17,7 @@ interface UseCameraLogicResult {
   permission: ReturnType<typeof useCameraPermissions>[0];
   permissionStatus: string;
   isCameraReady: boolean;
+  isCapturing: boolean;
   requestCameraPermission: () => Promise<void>;
   handleCameraReady: () => void;
   toggleCameraFacing: () => void;
@@ -31,6 +32,7 @@ export function useCameraLogic(): UseCameraLogicResult {
   const [permission, requestPermission] = useCameraPermissions();
   const [permissionStatus, setPermissionStatus] = useState<string>("unknown");
   const [isCameraReady, setIsCameraReady] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
   const { resetState } = useReceipt();
 
   const storeImageTemporarily =
@@ -81,6 +83,13 @@ export function useCameraLogic(): UseCameraLogicResult {
     checkAndRequestPermission();
   }, [permission]);
 
+  // Reset capturing state when component unmounts or navigates away
+  useEffect(() => {
+    return () => {
+      setIsCapturing(false);
+    };
+  }, []);
+
   const requestCameraPermission = async () => {
     try {
       const result = await requestPermission();
@@ -123,6 +132,18 @@ export function useCameraLogic(): UseCameraLogicResult {
       Alert.alert("Error", "Camera reference not available");
       return;
     }
+
+    // Prevent multiple simultaneous capture attempts
+    if (isCapturing) {
+      if (__DEV__) {
+        console.log(
+          "CAMERA_DEBUG: Already capturing, ignoring duplicate request"
+        );
+      }
+      return;
+    }
+
+    setIsCapturing(true);
 
     try {
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -185,10 +206,25 @@ export function useCameraLogic(): UseCameraLogicResult {
         { text: "Try Again", style: "default" },
         { text: "Select from Gallery", onPress: handleSelectFromGallery },
       ]);
+    } finally {
+      // Always reset the capturing state, even if there was an error
+      setIsCapturing(false);
     }
   };
 
   const handleSelectFromGallery = async () => {
+    // Prevent multiple simultaneous gallery selections
+    if (isCapturing) {
+      if (__DEV__) {
+        console.log(
+          "CAMERA_DEBUG: Already processing, ignoring gallery request"
+        );
+      }
+      return;
+    }
+
+    setIsCapturing(true);
+
     try {
       const { status } =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -243,6 +279,9 @@ export function useCameraLogic(): UseCameraLogicResult {
     } catch (error) {
       console.error("Error picking image:", error);
       Alert.alert("Error", "Failed to access photo library");
+    } finally {
+      // Always reset the capturing state
+      setIsCapturing(false);
     }
   };
 
@@ -264,6 +303,7 @@ export function useCameraLogic(): UseCameraLogicResult {
     permission,
     permissionStatus,
     isCameraReady,
+    isCapturing,
     requestCameraPermission,
     handleCameraReady,
     toggleCameraFacing,

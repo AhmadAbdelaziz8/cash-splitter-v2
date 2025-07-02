@@ -6,6 +6,7 @@ interface CameraBottomControlsProps {
   onCapturePhoto: () => void;
   onSelectFromGallery: () => void;
   isCameraReady: boolean;
+  isCapturing: boolean;
   insetsBottom: number;
 }
 
@@ -13,6 +14,7 @@ export default function CameraBottomControls({
   onCapturePhoto,
   onSelectFromGallery,
   isCameraReady,
+  isCapturing,
   insetsBottom,
 }: CameraBottomControlsProps) {
   return (
@@ -20,18 +22,31 @@ export default function CameraBottomControls({
       {/* Capture Photo Button */}
       <View className="flex-row items-center justify-center relative">
         <TouchableOpacity
-          className=" p-1 rounded-full border-4 border-white shadow-lg"
+          className={`p-1 rounded-full border-4 shadow-lg ${
+            isCapturing ? "border-gray-300 opacity-50" : "border-white"
+          }`}
           onPress={onCapturePhoto}
-          disabled={!isCameraReady}
+          disabled={!isCameraReady || isCapturing}
         >
-          <View className="h-20 w-20 rounded-full bg-white" />
+          <View
+            className={`h-20 w-20 rounded-full ${
+              isCapturing ? "bg-gray-300" : "bg-white"
+            }`}
+          />
         </TouchableOpacity>
         {/* Select from Gallery Button */}
         <TouchableOpacity
-          className="absolute left-0 bg-white/80 p-3 rounded-full shadow-md"
+          className={`absolute left-0 p-3 rounded-full shadow-md ${
+            isCapturing ? "bg-gray-300/80 opacity-50" : "bg-white/80"
+          }`}
           onPress={onSelectFromGallery}
+          disabled={isCapturing}
         >
-          <Ionicons name="images" size={28} color="#374151" />
+          <Ionicons
+            name="images"
+            size={28}
+            color={isCapturing ? "#9ca3af" : "#374151"}
+          />
         </TouchableOpacity>
       </View>
     </View>
