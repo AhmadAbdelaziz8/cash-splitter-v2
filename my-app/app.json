@@ -59,7 +59,8 @@
           "photosPermission": "Allow cash-splitter-v2 to access your photo library to select receipt images"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
