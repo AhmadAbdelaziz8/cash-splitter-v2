@@ -26,8 +26,8 @@
     },
     "production": {
       "autoIncrement": true,
-      "env": {
-        "NODE_ENV": "production"
+      "android": {
+        "buildType": "apk"
       },
       "cache": {
         "disabled": false
