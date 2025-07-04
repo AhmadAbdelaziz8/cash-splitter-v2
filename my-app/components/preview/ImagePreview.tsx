@@ -31,7 +31,7 @@ export default function ImagePreview({
   };
 
   return (
-    <View className="flex-1 justify-center items-center p-4">
+    <View className="flex-1 justify-center items-center bg-white rounded-xl shadow-sm">
       {loading && (
         <View className="absolute inset-0 justify-center items-center bg-gray-100 rounded-xl">
           <ActivityIndicator size="large" color="#3b82f6" />
@@ -53,7 +53,7 @@ export default function ImagePreview({
 
       <Image
         source={{ uri: imageUri }}
-        className="w-full h-full rounded-xl border-2 border-slate-200"
+        className="w-full h-full rounded-xl"
         resizeMode="contain"
         accessible={true}
         accessibilityLabel="Preview of captured receipt"

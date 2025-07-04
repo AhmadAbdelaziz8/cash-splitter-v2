@@ -1,11 +1,11 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useState, useEffect } from "react";
-import { View, Alert } from "react-native";
+import { View, Alert, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { parseImage } from "../utils/imageUtils";
 import { useReceipt } from "@/contexts/ReceiptContext";
+import { Ionicons } from "@expo/vector-icons";
 
-import PreviewHeader from "@/components/preview/PreviewHeader";
 import ImagePreview from "@/components/preview/ImagePreview";
 import PreviewActions from "@/components/preview/PreviewActions";
 import ErrorState from "@/components/preview/ErrorState";
@@ -24,10 +24,7 @@ export default function PreviewScreen() {
   }, [imageUri]);
 
   const handleRetake = async () => {
-    console.log(
-      "PREVIEW_DEBUG: Retake button pressed, isProcessing:",
-      isProcessing
-    );
+    console.log("PREVIEW_DEBUG: Retake button pressed, isProcessing:", isProcessing);
     if (isProcessing) {
       console.log("PREVIEW_DEBUG: Still processing, ignoring retake");
       return;
@@ -36,7 +33,7 @@ export default function PreviewScreen() {
     if (imageUri) {
       await deleteImageFile(imageUri);
     }
-
+    
     console.log("PREVIEW_DEBUG: Navigating back to camera");
     if (router.canGoBack()) {
       router.back();
@@ -61,9 +58,7 @@ export default function PreviewScreen() {
       setContextImageUri(imageUri);
       const base64Image = await parseImage(imageUri);
       setImageBase64(base64Image);
-      console.log(
-        "PREVIEW_DEBUG: Image processed successfully, navigating to edit screen"
-      );
+      console.log("PREVIEW_DEBUG: Image processed successfully, navigating to edit screen");
       router.push("/EditItemsScreen");
     } catch (error) {
       console.error("PREVIEW_DEBUG: Error processing image:", error);
@@ -83,31 +78,54 @@ export default function PreviewScreen() {
   }
 
   return (
-    <View style={{ paddingBottom: insets.bottom }} className="flex-1 bg-white">
-      <PreviewHeader
-        onBackPress={handleRetake}
-        disabled={isProcessing}
-        topInset={insets.top}
-      />
+    <View
+      className="flex-1 bg-slate-50"
+    >
+      {/* Header */}
+      <View
+        className="bg-white border-b border-slate-200"
+      >
+        <View className="px-4 py-3">
+          <TouchableOpacity
+            onPress={handleRetake}
+            disabled={isProcessing}
+            className="p-2 rounded-lg bg-slate-100 self-start"
+          >
+            <Ionicons
+              name="arrow-back"
+              size={24}
+              color={isProcessing ? "#cbd5e1" : "#64748b"}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-      <ImagePreview
-        imageUri={imageUri}
-        onImageLoad={() => {
-          console.log("PREVIEW_DEBUG: Image loaded successfully");
-          setImageLoaded(true);
-        }}
-        onImageError={(error) => {
-          console.error("PREVIEW_DEBUG: Image load error:", error);
-          setImageLoaded(false);
-        }}
-      />
+      {/* Image Preview */}
+      <View className="flex-1 px-2">
+        <ImagePreview
+          imageUri={imageUri}
+          onImageLoad={() => {
+            console.log("PREVIEW_DEBUG: Image loaded successfully");
+            setImageLoaded(true);
+          }}
+          onImageError={(error) => {
+            console.error("PREVIEW_DEBUG: Image load error:", error);
+            setImageLoaded(false);
+          }}
+        />
+      </View>
 
-      <PreviewActions
-        onRetake={handleRetake}
-        onProceed={handleProceed}
-        isProcessing={isProcessing}
-        hasImage={!!imageUri && imageLoaded}
-      />
+      {/* Actions Footer */}
+      <View
+        className="bg-white border-t border-slate-200 my-2"
+      >
+        <PreviewActions
+          onRetake={handleRetake}
+          onProceed={handleProceed}
+          isProcessing={isProcessing}
+          hasImage={!!imageUri && imageLoaded}
+        />
+      </View>
     </View>
   );
 }
