@@ -136,3 +136,9 @@ dist
 .pnp.*
 
 .cursor
+
+# plan md file
+.md
+
+# Local Netlify folder
+.netlify

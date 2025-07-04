@@ -1,0 +1,65 @@
+/* Animation */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.animate-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Animated Gradient Background */
+@keyframes gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient {
+  background-size: 200% 200%;
+  animation: gradient-animation 15s ease infinite;
+}
+
+/* How It Works - Desktop Cards */
+.step-card-desktop {
+  @apply bg-white p-6 rounded-lg shadow-lg border border-slate-100 flex items-start space-x-5 transition-transform duration-300;
+}
+.step-card-desktop:hover {
+  @apply transform -translate-y-2 shadow-xl;
+}
+
+/* Mobile Timeline: Vertical */
+.timeline-container-vertical {
+  @apply relative pl-5;
+}
+
+.timeline-container-vertical::before {
+  content: "";
+  @apply absolute left-5 top-0 h-full w-0.5 bg-slate-200;
+}
+
+.timeline-item-vertical {
+  @apply relative pl-10 pb-10;
+}
+
+.timeline-item-vertical::before {
+  content: "";
+  @apply absolute -left-0.5 top-1.5 w-5 h-5 bg-white border-4 border-blue-600 rounded-full z-10;
+  transform: translateX(-50%);
+}
+
+.timeline-item-vertical:last-child {
+  @apply pb-0;
+}
+
+.timeline-content-vertical {
+  @apply relative top-0;
+}
