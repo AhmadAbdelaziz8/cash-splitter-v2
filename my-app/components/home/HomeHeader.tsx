@@ -16,10 +16,10 @@ export default function HomeHeader({
       <Text className="text-4xl font-bold text-slate-800">Cash Splitter</Text>
       {storedApiKey && (
         <TouchableOpacity
-          className="p-4 rounded-full bg-slate-200 active:bg-slate-300 shadow-md"
+          className="p-4 rounded-3xl bg-slate-200 active:bg-slate-300 shadow-md"
           onPress={onSettingsPress}
         >
-          <Ionicons name="settings-outline" size={28} color="#3b82f6" />
+          <Ionicons name="settings-outline" size={24} color="#3b82f6" />
         </TouchableOpacity>
       )}
     </View>

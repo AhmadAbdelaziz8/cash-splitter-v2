@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Alert, Linking, Platform, StyleSheet } from "react-native";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Alert, Linking, Platform } from "react-native";
 import * as FileSystem from "expo-file-system";
 import {
   CameraView,
@@ -33,6 +33,7 @@ export function useCameraLogic(): UseCameraLogicResult {
   const [permissionStatus, setPermissionStatus] = useState<string>("unknown");
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
+  const isCapturingRef = useRef(false);
   const { resetState } = useReceipt();
 
   const storeImageTemporarily =
@@ -44,7 +45,7 @@ export function useCameraLogic(): UseCameraLogicResult {
             await FileSystem.makeDirectoryAsync(imageDir, {
               intermediates: true,
             });
-            const fileName = Date.now() + "_" + originalUri.split("/").pop();
+            const fileName = Date.now() + "_receipt.jpg";
             const newPersistentUri = imageDir + fileName;
             await FileSystem.copyAsync({
               from: originalUri,
@@ -83,13 +84,6 @@ export function useCameraLogic(): UseCameraLogicResult {
     checkAndRequestPermission();
   }, [permission]);
 
-  // Reset capturing state when component unmounts or navigates away
-  useEffect(() => {
-    return () => {
-      setIsCapturing(false);
-    };
-  }, []);
-
   const requestCameraPermission = async () => {
     try {
       const result = await requestPermission();
@@ -111,15 +105,23 @@ export function useCameraLogic(): UseCameraLogicResult {
     }
   };
 
-  const handleCameraReady = () => {
+  const handleCameraReady = useCallback(() => {
+    console.log("CAMERA_DEBUG: Camera is ready");
     setIsCameraReady(true);
-  };
+    isCapturingRef.current = false;
+    setIsCapturing(false);
+  }, []);
 
-  const toggleCameraFacing = () => {
+  const toggleCameraFacing = useCallback(() => {
     setFacing((current) => (current === "back" ? "front" : "back"));
-  };
+  }, []);
 
-  const handleCapturePhoto = async () => {
+  const handleCapturePhoto = useCallback(async () => {
+    if (isCapturingRef.current) {
+      if (__DEV__) console.log("CAMERA_DEBUG: Capture already in progress.");
+      return;
+    }
+
     if (!isCameraReady) {
       Alert.alert(
         "Camera not ready",
@@ -133,96 +135,64 @@ export function useCameraLogic(): UseCameraLogicResult {
       return;
     }
 
-    // Prevent multiple simultaneous capture attempts
-    if (isCapturing) {
-      if (__DEV__) {
-        console.log(
-          "CAMERA_DEBUG: Already capturing, ignoring duplicate request"
-        );
-      }
-      return;
-    }
-
+    isCapturingRef.current = true;
     setIsCapturing(true);
+    console.log("CAMERA_DEBUG: Starting photo capture");
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.7,
+        quality: 0.8,
         skipProcessing: false,
         base64: false,
         exif: false,
       });
 
+      console.log(
+        "CAMERA_DEBUG: Photo captured:",
+        photo?.uri ? "Success" : "Failed"
+      );
+
       if (photo?.uri) {
-        try {
-          const persistentUri = await storeImageTemporarily(photo.uri);
-          if (__DEV__) {
-            console.log(
-              "CAMERA_DEBUG: Navigating to preview with URI:",
-              persistentUri
-            );
-          }
-          router.push({
-            pathname: "/preview",
-            params: { imageUri: persistentUri },
-          });
-        } catch (copyError) {
-          Alert.alert(
-            "Error",
-            "Failed to save captured photo before previewing."
-          );
-        }
+        const persistentUri = await storeImageTemporarily(photo.uri);
+        console.log(
+          "CAMERA_DEBUG: Navigating to preview with URI:",
+          persistentUri
+        );
+        router.push({
+          pathname: "/preview",
+          params: { imageUri: persistentUri },
+        });
       } else {
         Alert.alert(
           "Error",
-          "Failed to capture photo - no image data received"
+          "Failed to capture photo - no image data received. Please try again."
         );
       }
     } catch (error) {
-      if (__DEV__) {
-        console.error("Failed to take picture:", error);
-      }
-
+      console.error("CAMERA_DEBUG: Failed to take picture:", error);
       let errorMessage = "Unknown error occurred";
       if (error instanceof Error) {
-        if (error.message.includes("Camera is not running")) {
-          errorMessage = "Camera is not active. Please restart the camera.";
-        } else if (error.message.includes("permission")) {
-          errorMessage =
-            "Camera permission issue. Please check app permissions.";
-        } else if (
-          error.message.includes("storage") ||
-          error.message.includes("disk")
-        ) {
-          errorMessage = "Not enough storage space to save the photo.";
-        } else {
-          errorMessage = error.message;
-        }
+        errorMessage = error.message;
       }
-
       Alert.alert("Camera Error", `Failed to take picture: ${errorMessage}`, [
         { text: "Try Again", style: "default" },
         { text: "Select from Gallery", onPress: handleSelectFromGallery },
       ]);
     } finally {
-      // Always reset the capturing state, even if there was an error
+      console.log("CAMERA_DEBUG: Finalizing capture, resetting state.");
+      isCapturingRef.current = false;
       setIsCapturing(false);
     }
-  };
+  }, [isCameraReady, handleSelectFromGallery, storeImageTemporarily]);
 
-  const handleSelectFromGallery = async () => {
-    // Prevent multiple simultaneous gallery selections
-    if (isCapturing) {
-      if (__DEV__) {
-        console.log(
-          "CAMERA_DEBUG: Already processing, ignoring gallery request"
-        );
-      }
+  const handleSelectFromGallery = useCallback(async () => {
+    if (isCapturingRef.current) {
+      if (__DEV__)
+        console.log("CAMERA_DEBUG: Gallery selection already in progress.");
       return;
     }
 
+    isCapturingRef.current = true;
     setIsCapturing(true);
 
     try {
@@ -248,54 +218,47 @@ export function useCameraLogic(): UseCameraLogicResult {
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        try {
-          const persistentUri = await storeImageTemporarily(
-            result.assets[0].uri
-          );
-          if (__DEV__) {
-            console.log(
-              "CAMERA_DEBUG: Navigating to preview from gallery with URI:",
-              persistentUri
-            );
-          }
-          router.push({
-            pathname: "/preview",
-            params: { imageUri: persistentUri },
-          });
-        } catch (copyError) {
-          Alert.alert(
-            "Error",
-            "Failed to save selected photo before previewing."
-          );
-        }
-      } else if (result.canceled) {
-        console.log("Image selection cancelled");
-      } else {
-        Alert.alert(
-          "Error",
-          "No image selected or an unexpected error occurred."
+        const persistentUri = await storeImageTemporarily(result.assets[0].uri);
+        console.log(
+          "CAMERA_DEBUG: Navigating to preview from gallery with URI:",
+          persistentUri
         );
+        router.push({
+          pathname: "/preview",
+          params: { imageUri: persistentUri },
+        });
       }
     } catch (error) {
-      console.error("Error picking image:", error);
+      console.error("CAMERA_DEBUG: Error picking image:", error);
       Alert.alert("Error", "Failed to access photo library");
     } finally {
-      // Always reset the capturing state
+      isCapturingRef.current = false;
       setIsCapturing(false);
     }
-  };
+  }, [storeImageTemporarily]);
 
-  const handleCameraMountError = (error: CameraMountError) => {
-    console.error("CAMERA_DEBUG: Camera mount error:", error);
-    Alert.alert(
-      "Camera Error",
-      "Failed to initialize camera. This might be due to another app using the camera or hardware issues.",
-      [
-        { text: "Try Again", onPress: () => router.replace("/camera") },
-        { text: "Use Gallery", onPress: handleSelectFromGallery },
-      ]
-    );
-  };
+  const handleCameraMountError = useCallback(
+    (error: CameraMountError) => {
+      console.error("CAMERA_DEBUG: Camera mount error:", error);
+      isCapturingRef.current = false;
+      setIsCapturing(false);
+      setIsCameraReady(false);
+      Alert.alert(
+        "Camera Error",
+        "Failed to initialize camera. This might be due to another app using the camera or hardware issues.",
+        [
+          {
+            text: "Try Again",
+            onPress: () => {
+              router.replace("/camera");
+            },
+          },
+          { text: "Use Gallery", onPress: handleSelectFromGallery },
+        ]
+      );
+    },
+    [handleSelectFromGallery]
+  );
 
   return {
     cameraRef,

@@ -1,5 +1,7 @@
 import { router } from "expo-router";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { useState, useCallback } from "react";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CameraView } from "expo-camera";
@@ -11,6 +13,7 @@ import { useCameraLogic } from "@/hooks/useCameraLogic";
 
 export default function CameraScreen() {
   const insets = useSafeAreaInsets();
+  const [cameraKey, setCameraKey] = useState(0);
 
   const {
     cameraRef,
@@ -25,7 +28,20 @@ export default function CameraScreen() {
     handleCapturePhoto,
     handleSelectFromGallery,
     handleCameraMountError,
+    resumeCameraPreview,
+    pauseCameraPreview,
   } = useCameraLogic();
+
+  // Reset camera state when screen comes into focus by changing the key
+  useFocusEffect(
+    useCallback(() => {
+      console.log("CAMERA_DEBUG: Camera screen focused, forcing remount.");
+      setCameraKey((prevKey) => prevKey + 1);
+      return () => {
+        console.log("CAMERA_DEBUG: Camera screen unfocused.");
+      };
+    }, [])
+  );
 
   if (!permission) {
     return (
@@ -45,14 +61,19 @@ export default function CameraScreen() {
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-black">
       <CameraView
+        key={cameraKey}
         ref={cameraRef}
-        style={StyleSheet.absoluteFill}
+        style={{ flex: 1 }}
         facing={facing}
         onCameraReady={handleCameraReady}
         autofocus="on"
         onMountError={handleCameraMountError}
+        animateShutter={true}
+        enableTorch={false}
+        flash="off"
+        mode="picture"
       />
 
       <CameraTopControls
