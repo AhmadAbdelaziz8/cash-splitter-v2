@@ -6,7 +6,10 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
     },
     "preview": {
       "distribution": "internal",
@@ -14,23 +17,17 @@
         "buildType": "apk"
       }
     },
-    "stable": {
-      "distribution": "internal",
+    "production": {
+      "autoIncrement": true,
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
       },
-      "env": {
-        "NODE_ENV": "production"
-      }
-    },
-    "production": {
-      "autoIncrement": true,
-      "android": {
-        "buildType": "apk"
-      },
       "cache": {
         "disabled": false
+      },
+      "env": {
+        "NODE_ENV": "production"
       }
     }
   },

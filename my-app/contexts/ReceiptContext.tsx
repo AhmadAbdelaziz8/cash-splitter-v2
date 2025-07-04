@@ -23,6 +23,8 @@ interface ReceiptContextType {
   imageUri: string | null;
   imageBase64: string | null;
   setImageData: (uri: string, base64: string) => void;
+  setImageUri: (uri: string | null) => void;
+  setImageBase64: (base64: string | null) => void;
 
   // Receipt items and totals
   items: ReceiptItem[];
@@ -44,6 +46,8 @@ interface ReceiptContextType {
   deleteItem: (id: string) => void;
   updateReceiptTax: (newTax: string | null) => void; // Always percentage string
   updateServiceChargeValue: (newService: number | null) => void; // Always fixed number
+  processReceiptImage: (imageBase64: string) => Promise<void>;
+  setProcessedReceiptData: (data: GeminiParsedReceiptData) => void;
   parseReceipt: () => Promise<void>;
   generateShareableLink: () => void;
   resetState: () => void;
@@ -76,6 +80,11 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
   const [processingErrorType, setProcessingErrorType] =
     useState<ReceiptParsingError | null>(null);
 
+  const setImageData = (uri: string, base64: string) => {
+    setImageUri(uri);
+    setImageBase64(base64);
+  };
+
   const setProcessedReceiptData = (data: GeminiParsedReceiptData) => {
     const processedItems: ReceiptItem[] = data.items.map((item, index) => ({
       id: `item_${Date.now()}_${index}`,
@@ -102,7 +111,7 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
   const normalizeTax = (
     taxValue: number | string | null | undefined,
     subtotal: number
-  ): string | number | null => {
+  ): string | null => {
     if (taxValue === null || taxValue === undefined) {
       return "14%"; // Default to 14% percentage
     }
@@ -125,8 +134,9 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         }
       }
 
-      // If it doesn't match any common percentage, keep as fixed amount
-      return taxValue;
+      // If it doesn't match any common percentage, convert to percentage based on calculated rate
+      const calculatedPercentage = Math.round((taxValue / subtotal) * 100);
+      return `${calculatedPercentage}%`;
     }
 
     return "14%"; // Default fallback
@@ -154,14 +164,14 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
 
         setItems(parsedItems);
         setOriginalReceiptTotal(result.data.total);
-        
+
         // Tax is only set if found on receipt (no default)
         if (result.data.tax) {
           setReceiptTax(result.data.tax);
         } else {
           setReceiptTax(null); // No tax found, don't default
         }
-        
+
         // Service is only set if found on receipt
         setServiceChargeValue(result.data.service || null);
       } else {
@@ -330,6 +340,7 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         isProcessing,
         processingError,
         processingErrorType,
+        setImageData,
         setImageUri,
         setImageBase64,
         setProcessedReceiptData,
@@ -339,6 +350,11 @@ export const ReceiptProvider: React.FC<{ children: ReactNode }> = ({
         updateReceiptTax,
         updateServiceChargeValue,
         processReceiptImage,
+        parseReceipt: async () => {
+          if (imageBase64) {
+            await processReceiptImage(imageBase64);
+          }
+        },
         generateShareableLink,
         resetState,
         setProcessingError: handleSetProcessingError,

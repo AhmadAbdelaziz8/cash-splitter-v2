@@ -1,12 +1,10 @@
 import { Text, type TextProps } from "react-native";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { ColorScheme } from "@/types";
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
   type?: "default" | "title" | "defaultSemiBold" | "subtitle" | "link";
-  className?: string;
 };
 
 export function ThemedText({
@@ -14,12 +12,12 @@ export function ThemedText({
   lightColor,
   darkColor,
   type = "default",
-  className = "",
   ...rest
 }: ThemedTextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, "text");
 
-  const getTypeClasses = () => {
+  // Define Tailwind classes for different text types
+  const getTextClasses = () => {
     switch (type) {
       case "title":
         return "text-3xl font-bold leading-8";
@@ -28,22 +26,13 @@ export function ThemedText({
       case "subtitle":
         return "text-xl font-bold";
       case "link":
-        return "text-base leading-7 text-blue-600";
+        return "text-base text-blue-600 leading-6";
       default:
         return "text-base leading-6";
     }
   };
 
-  const combinedClassName = `${getTypeClasses()} ${className}`.trim();
-
   return (
-    <Text
-      className={combinedClassName}
-      style={[
-        type !== "link" && { color }, // Only apply custom color if not a link type
-        style,
-      ]}
-      {...rest}
-    />
+    <Text style={[{ color }, style]} className={getTextClasses()} {...rest} />
   );
 }

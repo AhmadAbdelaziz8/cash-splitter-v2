@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 
   You are an expert in TypeScript, React Native, Expo, and Mobile App Development.
@@ -41,6 +41,9 @@ alwaysApply: false
   - Use React Navigation for handling navigation and deep linking with best practices.
   - make sure to use the latest 
 
+Usage of Terminal: 
+- you are using powershell, therefore you should follow it's syntax,
+example:  use ";" while writing multiple actions instead of "&&"
 
 
 

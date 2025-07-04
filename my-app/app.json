@@ -7,14 +7,6 @@
     "icon": "./assets/images/appIcon.png",
     "scheme": "cashsplitterv2",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.cashsplitterv2",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
-    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/appIcon.png",
@@ -25,14 +17,8 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.READ_EXTERNAL_STORAGE"
       ]
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/appIcon.png"
     },
     "plugins": [
       "expo-router",
@@ -48,9 +34,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow cash-splitter-v2 to access your camera to scan receipts",
-          "microphonePermission": true,
-          "recordAudioAndroid": true
+          "cameraPermission": "Allow cash-splitter-v2 to access your camera to scan receipts"
         }
       ],
       [
@@ -59,8 +43,7 @@
           "photosPermission": "Allow cash-splitter-v2 to access your photo library to select receipt images"
         }
       ],
-      "expo-secure-store",
-      "expo-web-browser"
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true
@@ -70,6 +53,14 @@
       "eas": {
         "projectId": "848bc505-cfbb-4b91-abc8-62365f61930b"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
+  },
+  "devDependencies": {
+    "react-test-renderer": "^18.2.0",
+    "storybook": "^7.6.0",
+    "chromatic": "^10.0.0"
   }
 }
