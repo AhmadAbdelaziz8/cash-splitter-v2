@@ -1,30 +1,32 @@
-# Cash-Splitter V2
+# Cash Splitter V2
 
-## Description
+A mobile application designed to make splitting bills easier and faster by scanning receipts and generating shareable expense links.
 
-This project is the second version of Cash-Splitter. I am rebuilding the application to add new and improved ways to manage shared expenses. 
-The main goals are to make splitting bills easier and faster.
+## Live Demo
 
-This new version will include features like:
+Check out the live landing page for the project:
 
-- Scanning receipts using LLM (gemini specifically) to automatically find items and prices.
-- Sharing expense details easily with a simple link, instead of a complicated process.
+**[https://cash-splitter-v22.netlify.app/](https://cash-splitter-v22.netlify.app/)**
+
+## Architecture
+
+The project is built with a modern, decoupled architecture:
+
+- **Mobile Application (`/my-app`):** A cross-platform mobile app built with React Native and Expo. It handles all the core functionality, including receipt scanning, item management, and expense calculation.
+- **Landing Page (`/landing-page`):** A static marketing and download page built with vanilla HTML, CSS, and JavaScript. It is deployed separately on Netlify and provides project information and a link to download the APK.
 
 ## How It Works
 
 Cash-Splitter V2 helps you and your friends or family share costs fairly.
 
-1.  **Create an Event or Group:** You can start by creating a new event (like a dinner or a trip) or a group for ongoing shared expenses.
-2.  **Add Expenses:**
-    - scanning feature: take a picture of your receipt, and the app will try to read the items and amounts for you.
-    - manually edit or delete any inaccurate items
-4.  **generate a sharable link for your friends to calculate their expenses:**
-    - a linke will open-up a static webpage that will show and calculate each person's share
+1.  **Scan Receipt:** Take a picture of your receipt, and the app will use an LLM to read the items and amounts for you.
+2.  **Review Items:** Manually edit or delete any inaccurate items to ensure the bill is correct.
+3.  **Generate Link:** Get a shareable link that opens a static webpage, allowing friends to see and calculate their individual shares.
 
 The goal is to make splitting bills clear and simple for everyone involved.
 
-
 ## Tech Stack
+
 - **Frontend (Mobile App):**
   - **React Native:** A framework for building native mobile apps using JavaScript and React.
   - **Expo:** A platform and set of tools built around React Native to simplify development, building, and deploying apps.
@@ -32,7 +34,7 @@ The goal is to make splitting bills clear and simple for everyone involved.
   - **NativeWind:** A utility-first styling solution for React Native, using Tailwind CSS principles.
   - **React Navigation:** For handling navigation between different screens in the app.
 - **LLM for Receipt Scanning:**
-    - GEMINI 2.0 flash
+  - The application uses Google's Gemini Pro model to parse receipt images.
 
 ## Project Structure (Inside `my-app/`)
 
@@ -80,6 +82,15 @@ The `my-app/` directory contains the main source code for the application:
     yarn start
     ```
     This will start the Metro Bundler. You can then scan the QR code with the Expo Go app on your phone or run it on an emulator/simulator.
+
+## How to Contribute
+
+We welcome contributions from the developer community! Here are a few ways you can help improve Cash Splitter V2:
+
+- **iOS Deployment:** The application is currently built for Android. A major contribution would be to set up the build and deployment process for iOS, making the app available on the Apple App Store.
+- **Multi-Image Capture:** Enhance the receipt scanning feature to allow users to capture and process multiple images for long receipts. This would involve updating the camera interface and the logic for sending images to the LLM.
+
+If you are interested in contributing, please fork the repository and submit a pull request with your changes.
 
 ## Available Scripts
 

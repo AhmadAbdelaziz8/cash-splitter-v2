@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI, Part, SchemaType } from "@google/generative-ai";
 import {
   ParseResult,
-  ParsedReceiptData, 
+  ParsedReceiptData,
   ReceiptItem,
 } from "@/config/geminiConfig";
 import { API, MESSAGES } from "@/constants/AppConstants";
