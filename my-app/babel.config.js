@@ -7,6 +7,14 @@ module.exports = function (api) {
     ],
     plugins: [
       "react-native-reanimated/plugin", // Required by expo-router
+      [
+        "module-resolver",
+        {
+          alias: {
+            "@": "./",
+          },
+        },
+      ],
     ],
   };
 };

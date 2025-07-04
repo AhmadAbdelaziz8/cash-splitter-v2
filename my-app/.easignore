@@ -6,6 +6,8 @@ node_modules/
 
 # Expo
 .expo/
+# apk files
+*.apk
 
 # Local build artifacts - COMPREHENSIVE
 android/build/
