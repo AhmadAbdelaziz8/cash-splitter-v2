@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI, Part, SchemaType } from "@google/generative-ai";
 import {
   ParseResult,
-  ParsedReceiptData, 
+  ParsedReceiptData,
   ReceiptItem,
 } from "@/config/geminiConfig";
 import { API, MESSAGES } from "@/constants/AppConstants";
@@ -207,7 +207,7 @@ class ReceiptService {
     base64Image: string,
     mimeType: string = API.DEFAULT_MIME_TYPE
   ): Promise<ParseResult> {
-    const apiKey = await getApiKey();
+    const apiKey = await sgetApiKey();
 
     if (!apiKey) {
       errorHandler.logError(
