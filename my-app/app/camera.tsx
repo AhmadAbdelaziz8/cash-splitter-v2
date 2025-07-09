@@ -28,8 +28,7 @@ export default function CameraScreen() {
     handleCapturePhoto,
     handleSelectFromGallery,
     handleCameraMountError,
-    resumeCameraPreview,
-    pauseCameraPreview,
+    
   } = useCameraLogic();
 
   // Reset camera state when screen comes into focus by changing the key

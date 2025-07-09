@@ -63,3 +63,13 @@
 .timeline-content-vertical {
   @apply relative top-0;
 }
+
+.step-title-2 {
+  color: #fd7e14;
+}
+.step-title-3 {
+  color: #d63384;
+}
+.step-title-4 {
+  color: #198754;
+}

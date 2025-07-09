@@ -1,0 +1,28 @@
+{
+  "name": "cash-splitter-v2",
+  "version": "1.0.0",
+  "description": "A mobile application designed to make splitting bills easier and faster by scanning receipts and generating shareable expense links.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AhmadAbdelaziz8/cash-splitter-v2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AhmadAbdelaziz8/cash-splitter-v2/issues"
+  },
+  "homepage": "https://github.com/AhmadAbdelaziz8/cash-splitter-v2#readme",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.10",
+    "@vercel/node": "^5.3.2",
+    "typescript": "^5.8.3"
+  }
+}

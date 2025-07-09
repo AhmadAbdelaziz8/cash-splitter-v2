@@ -1,4 +1,3 @@
-// Smooth scrolling for anchor links
 document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   anchor.addEventListener("click", function (e) {
     e.preventDefault();
@@ -9,7 +8,6 @@ document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
   });
 });
 
-// Scroll animations
 const animatedElements = document.querySelectorAll(".animate-on-scroll");
 
 const observer = new IntersectionObserver(
@@ -29,22 +27,3 @@ const observer = new IntersectionObserver(
 animatedElements.forEach((element) => {
   observer.observe(element);
 });
-
-// Download button tracking
-const downloadButton = document.getElementById("download-button");
-
-if (downloadButton) {
-  downloadButton.addEventListener("click", () => {
-    console.log(
-      "Download button clicked! Sending event to Google Analytics..."
-    );
-
-    // Send an event to Google Analytics
-    if (typeof gtag === "function") {
-      gtag("event", "download_click", {
-        event_category: "Landing Page Actions",
-        event_label: "Hero Download Button",
-      });
-    }
-  });
-}
